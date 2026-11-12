@@ -1,0 +1,2243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Anomaly Emblem // Alchemy Production</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header>
+    <div>
+      <h1>🛸 ANOMALY EMBLEM // ACF</h1>
+      <small id="sector-label">Sector 01: Cargo Bay (4 Cells) • By Alchemy Production</small>
+    </div>
+    <div id="hud">
+      <span>🧬 Basic DNA: <strong id="basic-dna">150</strong></span>
+      <span>👽 Alien DNA: <strong id="alien-dna">0</strong></span>
+      <span>🦊 Fox Tails: <strong id="fox-tails">1</strong>/9</span>
+      <span id="candy-hud" class="hidden">🍬 Candy: <strong id="cursed-candy">0</strong></span>
+    </div>
+  </header>
+
+  <nav>
+    <button onclick="switchTab('facility')">Containment Cells (<span id="living-count">1</span>)</button>
+    <button onclick="switchTab('incubator')">Genetic Trees & Incubator</button>
+    <button onclick="switchTab('expeditions')">Research & Wild Raids</button>
+    <button onclick="switchTab('battle')">Combat Arena</button>
+    <button onclick="switchTab('memorial')">Memorial (<span id="memorial-count">0</span>)</button>
+    <button onclick="switchTab('supporter')">🍭 Supporter / Save</button>
+  </nav>
+
+  <main>
+    <p id="status-bar">ACF Terminal Online. Rock Ape active in Sector 01 - Cell 01.</p>
+
+    <!-- TAB 1: CONTAINMENT FACILITY -->
+    <section id="tab-facility" class="tab active">
+      <div class="toolbar">
+        <div id="sector-tabs" class="sector-nav"></div>
+        <button id="repair-btn" onclick="repairUfoSector()">🔧 Repair Next UFO Sector (+4 Cells & Alien DNA) - Cost: 250 DNA</button>
+      </div>
+      <div id="cells-grid" class="grid"></div>
+    </section>
+
+    <!-- TAB 2: GENETIC TREES & INCUBATOR -->
+    <section id="tab-incubator" class="tab">
+      <div class="toolbar">
+        <input type="text" id="custom-name-input" placeholder="Optional custom specimen name...">
+        <select id="chamber-select">
+          <option value="standard">Chamber 01: Standard UFO Incubator</option>
+          <option value="phoenix" id="opt-phoenix-chamber" disabled>Chamber 02: [LOCKED - Hatch Leucistic Phoenix]</option>
+        </select>
+        <select id="tree-filter" onchange="renderAll()"></select>
+        <span id="fragments-display">Shards: None</span>
+      </div>
+      <div id="tree-grid" class="grid"></div>
+    </section>
+
+    <!-- TAB 3: TIERED RESEARCH & WILD RAIDS -->
+    <section id="tab-expeditions" class="tab">
+      <div class="grid">
+        <div class="card">
+          <h3>📡 Tier 1: Local Field Scan</h3>
+          <p>Extracts +25% to +50% DNA Sequence progress for Common & Rare anomalies.</p>
+          <button onclick="sendResearchTeam('tier1')">Deploy Scan (Cost: 35 Basic DNA)</button>
+        </div>
+        <div class="card">
+          <h3>🧭 Tier 2: Deep Lore Expedition</h3>
+          <p>Extracts +15% to +25% DNA Sequence progress for Rare & Epic anomalies.</p>
+          <button onclick="sendResearchTeam('tier2')">Deploy Expedition (Cost: 85 Basic DNA)</button>
+        </div>
+        <div class="card alien">
+          <h3>🏛️ Tier 3: Apex Relic Hunt</h3>
+          <p>Extracts +10% DNA Sequence progress toward God-Like Legendary titans.</p>
+          <button onclick="sendResearchTeam('tier3')">Deploy Relic Hunt (Cost: 160 Basic DNA)</button>
+        </div>
+        <div class="card danger">
+          <h3>⚠️ Wild Containment Raid (Permadeath!)</h3>
+          <p>Requires at least <strong>5 living anomalies</strong> in your facility. Subdue wild creatures below 25% HP for instant capture. 0 HP = permanent loss.</p>
+          <button id="raid-btn" onclick="startWildBattle()">Launch Containment Raid (Cost: 120 Basic DNA)</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 4: COMBAT ARENA -->
+    <section id="tab-battle" class="tab">
+      <div class="card">
+        <h3 id="battle-title">Hard-Light Sparring Arena (Safe Mode)</h3>
+        <div class="toolbar">
+          <label>Select Fighter: <select id="fighter-select"></select></label>
+          <button onclick="setupSparring()">Start Safe Sparring Match</button>
+        </div>
+        <div id="battle-stage">
+          <div id="player-fighter">Select a specimen to deploy.</div>
+          <div id="enemy-fighter">Awaiting opponent...</div>
+        </div>
+        <div id="battle-controls">
+          <button id="btn-atk" onclick="battleTurn('attack')" disabled>⚔️ Attack</button>
+          <button id="btn-def" onclick="battleTurn('defend')" disabled>🛡️ Defend</button>
+          <button id="btn-heal" onclick="battleTurn('heal')" disabled>💚 Heal</button>
+          <button id="btn-capture" onclick="battleTurn('capture')" disabled>🕸️ Subdue (<25% HP)</button>
+        </div>
+        <p id="battle-log"></p>
+      </div>
+    </section>
+
+    <!-- TAB 5: FALLEN MEMORIAL -->
+    <section id="tab-memorial" class="tab">
+      <h2>Fallen Specimens Archive</h2>
+      <ul id="memorial-list"></ul>
+    </section>
+
+    <!-- TAB 6: SUPPORTER ADD-ON & SAVE BACKUP -->
+    <section id="tab-supporter" class="tab">
+      <div class="grid">
+        <div class="card alien">
+          <h3>🍭 Cannibalistic Piñata Add-On</h3>
+          <p>100% Cosmetic Supporter Perk by Alchemy Production. Unlocks an isolated Piñata pod that generates Cursed Candy for custom Candy Themes.</p>
+          <div id="pinata-locked-ui">
+            <input type="text" id="gumroad-key-input" placeholder="Enter Gumroad License Key...">
+            <button onclick="verifyPinataLicense()">Activate Add-On</button>
+          </div>
+          <div id="pinata-unlocked-ui" class="hidden">
+            <p><strong>Status:</strong> Active! Generating +5 Cursed Candy / 2.5s.</p>
+            <label>Apply Candy Theme (100 Candy): <select id="candy-target-select"></select></label>
+            <button onclick="applyCandyTheme()">🍬 Coat Specimen</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3>💾 Facility Save Backup</h3>
+          <p>Game auto-saves locally. Export a backup code to transfer your facility between devices.</p>
+          <button onclick="exportSave()">Copy Save Code</button>
+          <button onclick="importSave()">Import Save Code</button>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- SECRET LEUCISTIC PHOENIX EASTER EGG MODAL -->
+  <div id="phoenix-modal" class="modal hidden">
+    <div class="modal-box">
+      <h2>🕊️ ALCHEMY PRODUCTION EASTER EGG!</h2>
+      <p>You hatched a <strong>Leucistic Phoenix</strong>! Your facility has permanently unlocked the <strong>Bonus Pale-Ember Incubator</strong> (4x higher Leucistic mutation odds).</p>
+      <button onclick="closePhoenixModal()">Claim Bonus Incubator</button>
+    </div>
+  </div>
+
+  <script src="creatures.js"></script>
+  <script src="game.js"></script>
+</body>
+</html>
+:root {
+  --bg: #090c10;
+  --panel: #161b22;
+  --border: #30363d;
+  --text: #c9d1d9;
+  --accent: #58a6ff;
+  --green: #2ea043;
+  --red: #da3633;
+  --purple: #a371f7;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Courier New', monospace;
+  margin: 0;
+  padding: 16px;
+}
+
+header {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 2px solid var(--green);
+  padding-bottom: 12px;
+  gap: 10px;
+}
+
+#hud {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 15px;
+  color: var(--accent);
+}
+
+nav, .sector-nav {
+  margin: 12px 0;
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+button, input, select {
+  background: #21262d;
+  color: #f0f6fc;
+  border: 1px solid var(--border);
+  padding: 10px 14px;
+  font-family: inherit;
+  font-size: 0.92rem;
+  border-radius: 4px;
+}
+
+button {
+  cursor: pointer;
+}
+
+button:hover:not(:disabled) {
+  border-color: var(--accent);
+  background: #30363d;
+}
+
+button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+button.active-sector {
+  border-color: var(--green);
+  background: #1f3326;
+}
+
+#status-bar {
+  background: var(--panel);
+  padding: 10px 14px;
+  border-left: 4px solid var(--green);
+  margin-bottom: 14px;
+}
+
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.tab {
+  display: none;
+}
+
+.tab.active {
+  display: block;
+}
+
+.hidden {
+  display: none !important;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 14px;
+}
+
+.cell, .card {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  padding: 14px;
+  border-radius: 6px;
+}
+
+.cell.occupied {
+  border-color: var(--green);
+}
+
+.card.danger {
+  border-color: var(--red);
+}
+
+.card.alien {
+  border-color: var(--purple);
+}
+
+/* Sequence Completion Progress Bar */
+.seq-bar-wrap {
+  background: #0d1117;
+  border: 1px solid var(--border);
+  height: 10px;
+  border-radius: 4px;
+  margin: 8px 0;
+  overflow: hidden;
+}
+
+.seq-bar-fill {
+  background: var(--accent);
+  height: 100%;
+  transition: width 0.3s ease;
+}
+
+/* Procedural SVG Emblems & Rare Morph Filters */
+.emblem {
+  width: 44px;
+  height: 44px;
+  display: inline-block;
+  vertical-align: middle;
+  margin-right: 10px;
+}
+
+.morph-Leucistic {
+  filter: brightness(1.8) saturate(0.15);
+  color: #ffffff;
+}
+
+.morph-Melanistic {
+  filter: brightness(0.45) contrast(1.5);
+  color: #8b949e;
+}
+
+.morph-Astral {
+  filter: hue-rotate(150deg) saturate(2);
+  color: #d2a8ff;
+}
+
+.morph-Candy {
+  filter: hue-rotate(290deg) saturate(2.5) brightness(1.2);
+  color: #ff7b72;
+}
+
+/* Battle Arena Stage */
+#battle-stage {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-around;
+  background: #0d1117;
+  padding: 18px;
+  margin: 14px 0;
+  border: 1px solid var(--border);
+  gap: 15px;
+}
+
+/* Secret Leucistic Phoenix Pop-Up Modal */
+.modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.85);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  padding: 20px;
+}
+
+.modal-box {
+  background: #1f1b26;
+  border: 2px solid #ffd700;
+  padding: 24px;
+  max-width: 460px;
+  border-radius: 8px;
+  text-align: center;
+  box-shadow: 0 0 25px rgba(255, 215, 0, 0.35);
+}
+const CREATURES_DB = {
+  // ==========================================
+  // TREE 1: APE-MAN & WILDMAN (4 Creatures)
+  // ==========================================
+  rockApe: {
+    name: "Rock Ape", tree: "Ape-Man", class: "Cryptid", rarity: "Common",
+    maxPerCell: 3, cost: 60, alienCost: 0, dnaRate: 6,
+    unlocked: true, seqProgress: 100, seqPerArtifact: 50,
+    yields: "Forest", reqText: "Starter Unlocked",
+    stats: { hp: 200, atk: 40, def: 30, heal: 15 }
+  },
+  sasquatch: {
+    name: "Sasquatch", tree: "Ape-Man", class: "Cryptid", rarity: "Common",
+    maxPerCell: 3, cost: 85, alienCost: 0, dnaRate: 9,
+    unlocked: false, seqProgress: 100, seqPerArtifact: 40,
+    evolvesFrom: "rockApe", reqFragment: "Forest", reqText: "Evolve Rock Ape + Forest Shard",
+    stats: { hp: 250, atk: 52, def: 38, heal: 20 }
+  },
+  hibagon: {
+    name: "Hibagon", tree: "Ape-Man", class: "Cryptid", rarity: "Rare",
+    maxPerCell: 2, cost: 115, alienCost: 0, dnaRate: 13,
+    unlocked: false, seqProgress: 0, seqPerArtifact: 34,
+    yields: "Mountain", reqText: "Tier 1 Field Scan",
+    stats: { hp: 295, atk: 65, def: 46, heal: 25 }
+  },
+  yeti: {
+    name: "Yeti", tree: "Ape-Man", class: "Cryptid", rarity: "Epic",
+    maxPerCell: 2, cost: 170, alienCost: 0, dnaRate: 19,
+    unlocked: false, seqProgress: 0, seqPerArtifact: 20,
+    yields: "Frost", reqText: "Tier 2 Lore Expedition",
+    stats: { hp: 390, atk: 88, def: 62, heal: 35 }
+  },
+
+  // ==========================================
+  // TREE 2: NORTH AMERICAN CRYPTIDS (5 Creatures)
+  // ==========================================
+  jackalope: {
+    name: "Jackalope", tree: "NA Cryptids", class: "Cryptid", rarity: "Common",
+    maxPerCell: 4, cost: 50, alienCost: 0, dnaRate: 5,
+    unlocked: true, seqProgress: 100, seqPerArtifact: 50,
+    yields: "Deer", reqText: "Starter Unlocked",
+    stats: { hp: 130, atk: 28, def: 18, heal: 35 }
+  },
+  ozarkHowler: {
+    name: "Ozark Howler", tree: "NA Cryptids", class: "Cryptid", rarity: "Rare",
+    maxPerCell: 3, cost: 95, alienCost: 0, dnaRate: 11,
+    unlocked: false, seqProgress: 0, seqPerArtifact: 34,
+    yields: "Horn", reqText: "Tier 1 Field Scan",
+    stats: { hp: 245, atk: 58, def: 36, heal: 25 }
+  },
+  mothman: {
+    name: "Mothman", tree: "NA Cryptids", class: "Spectral", rarity: "Rare",
+    maxPerCell: 2, cost: 120, alienCost: 0, dnaRate: 14,
+    unlocked: false, seqProgress: 0, seqPerArtifact: 25,
+    reqText: "Tier 1 Field Scan",
+    stats: { hp: 270, atk: 68, def: 42, heal: 45 }
+  },
+  chupacabra: {
+    name: "Chupacabra", tree: "NA Cryptids", class: "Demon", rarity: "Rare",
+    maxPerCell: 3, cost: 110, alienCost: 0, dnaRate: 12,
+    unlocked: false, seqProgress: 100, seqPerArtifact: 34,
+    evolvesFrom: "jackalope", reqFragment: "Fang", reqText: "Evolve Jackalope + Fang Shard",
+    stats: { hp: 230, atk: 74, def: 30, heal: 30 }
+  },
+  jerseyDevil: {
+    name: "Jersey Devil", tree: "NA Cryptids", class: "Demon", rarity: "Epic",
+    maxPerCell: 2, cost: 175, alienCost: 0, dnaRate: 19,
+    unlocked: false, seqProgress: 100, seqPerArtifact: 20,
+    evolvesFrom: "ozarkHowler", reqFragment: "Hoof", reqText: "Evolve Ozark Howler + Hoof Shard",
+    stats: { hp: 365, atk: 92, def: 50, heal: 35 }
+  },
+
+  // ==========================================
+  // TREE 3: SHAPESHIFTERS & SKIN-WALKERS (4 Creatures)
+  // ==========================================
+  skinwalker: {
+    name: "Yee Naaldlooshii", tree: "Shapeshifters", class: "Demon", rarity: "Rare",
+    maxPerCell: 2, cost: 130, alienCost: 0, dnaRate: 14,
+    unlocked: false, seqProgress: 0, seqPerArtifact: 25,
+    reqText: "Tier 2 Lore Expedition",
+    stats: { hp: 310, atk: 75, def: 48, heal: 40 }
+  },
+  stikini: {
+    name: "Stikini", tree: "Shapeshifters", class: "Demon", rarity: "Epic",
+    maxPerCell: 2, cost: 175, alienCost: 0, dnaRate: 19,
+    unlocked: false, seqProgress: 0, seqPerArtifact: 20,
+    reqText: "Tier 2 Lore Expedition",
+    stats: { hp: 360, atk: 94, def: 52, heal: 50 }
+  },
+  loupGarou: {
+    name: "Loup-Garou", tree: "Shapeshifters", class: "Monster", rarity: "Rare",
+    maxPerCell: 2, cost: 145, alienCost: 0, dnaRate: 16,
+    unlocked: false, seqProgress: 0, seqPerArtifact: 25,
+    reqText: "Tier 2 Lore Expedition",
+    stats: { hp: 340, atk: 82, def: 54, heal: 25 }
+  },
+  wendigo: {
+    name: "Wendigo", tree: "Shapeshifters", class: "Demon", rarity: "Epic",
+    maxPerCell: 2, cost: 195, alienCost: 0, dnaRate: 22,
+    unlocked: false, seqProgress: 100, seqPerArtifact: 20,
+    evolvesFrom: "skinwalker", reqFragment: "Deer", reqText: "Evolve Skinwalker + Deer Shard",
+    stats: { hp: 420, atk: 108, def: 56, heal: 30 }
+    // ==========================================
+  // TREE 4: BLACK DOGS & HELLHOUNDS (5 Creatures)
+  // ==========================================
+  blackShuck: {
+    name: "Black Shuck", tree: "Hounds", class: "Spectral", rarity: "Common",
+    maxPerCell: 3, cost: 80, alienCost: 0, dnaRate: 9,
+    unlocked: false, seqProgress: 0, seqPerArtifact: 35,
+    yields: "Hound", reqText: "Tier 1 Field Scan",
+    stats: { hp: 210, atk: 54, def: 36, heal: 20 }
+  },
+  cuSith: {
+    name: "Cù-Sìth", tree: "Hounds", class: "Spectral", rarity: "Rare",
+    maxPerCell: 3, cost: 115, alienCost: 0, dnaRate: 13,
+    unlocked: false, seqProgress: 0, seqPerArtifact: 34,
+    yields: "Fae", reqText: "Tier 1 Field Scan",
+    stats: { hp: 265, atk: 66, def: 42, heal: 40 }
+  },
+  amarok: {
+    name: "Amarok", tree: "Hounds", class: "Cryptid", rarity: "Epic",
+    maxPerCell: 2, cost: 185, alienCost: 0, dnaRate: 21,
+    unlocked: false, seqProgress: 0, seqPerArtifact: 20,
+    reqText: "Tier 2 Lore Expedition",
+    stats: { hp: 430, atk: 98, def: 68, heal: 30 }
+  },
+  garmr: {
+    name: "Garmr", tree: "Hounds", class: "Demon", rarity: "Rare",
+    maxPerCell: 2, cost: 140, alienCost: 0, dnaRate: 15,
+    unlocked: false, seqProgress: 100, seqPerArtifact: 25,
+    evolvesFrom: "blackShuck", reqFragment: "Ember", reqText: "Evolve Black Shuck + Ember Shard",
+    stats: { hp: 325, atk: 84, def: 48, heal: 20 }
+  },
+  cerberus: {
+    name: "Cerberus", tree: "Hounds", class: "Demon", rarity: "Legendary",
+    maxPerCell: 1, cost: 340, alienCost: 0, dnaRate: 44,
+    unlocked: false, seqProgress: 100, seqPerArtifact: 10,
+    evolvesFrom: "garmr", reqFragment: "Hound", reqText: "Evolve Garmr + Hound Shard",
+    stats: { hp: 790, atk: 175, def: 135, heal: 45 }
+  },
+
+  // ==========================================
+  // TREE 5: GREAT BIRDS & SKY TITANS (4 Creatures)
+  // ==========================================
+  thunderbird: {
+    name: "Thunderbird", tree: "Sky Titans", class: "Cryptid", rarity: "Legendary",
+    maxPerCell: 2, cost: 330, alienCost: 0, dnaRate: 42,
+    unlocked: false, seqProgress: 0, seqPerArtifact: 10,
+    yields: "Storm", reqText: "Tier 3 Apex Relic Hunt",
+    stats: { hp: 740, atk: 160, def: 115, heal: 65 }
+  },
+  rukh: {
+    name: "Rukh (Roc)", tree: "Sky Titans", class: "Monster", rarity: "Epic",
+    maxPerCell: 2, cost: 210, alienCost: 0, dnaRate: 24,
+    unlocked: false, seqProgress: 0, seqPerArtifact: 15,
+    reqText: "Tier 2 Lore Expedition",
+    stats: { hp: 480, atk: 112, def: 78, heal: 35 }
+  },
+  garuda: {
+    name: "Garuda", tree: "Sky Titans", class: "Spectral", rarity: "Legendary",
+    maxPerCell: 1, cost: 360, alienCost: 0, dnaRate: 46,
+    unlocked: false, seqProgress: 0, seqPerArtifact: 10,
+    reqText: "Tier 3 Apex Relic Hunt",
+    stats: { hp: 770, atk: 172, def: 125, heal: 90 }
+  },
+  hippogriff: {
+    name: "Hippogriff", tree: "Sky Titans", class: "Cryptid", rarity: "Rare",
+    maxPerCell: 2, cost: 140, alienCost: 0, dnaRate: 15,
+    unlocked: false, seqProgress: 0, seqPerArtifact: 25,
+    yields: "Eagle", reqText: "Tier 1 Field Scan",
+    stats: { hp: 330, atk: 78, def: 55, heal: 35 }
+  },
+
+  // ==========================================
+  // TREE 6: AFRICAN & SOUTH AMERICAN LEGENDS (4 Creatures)
+  // ==========================================
+  mokeleMbembe: {
+    name: "Mokele-mbembe", tree: "Southern Lore", class: "Cryptid", rarity: "Rare",
+    maxPerCell: 2, cost: 135, alienCost: 0, dnaRate: 15,
+    unlocked: false, seqProgress: 0, seqPerArtifact: 25,
+    reqText: "Tier 2 Lore Expedition",
+    stats: { hp: 370, atk: 70, def: 68, heal: 30 }
+  },
+  grootslang: {
+    name: "Grootslang", tree: "Southern Lore", class: "Monster", rarity: "Epic",
+    maxPerCell: 1, cost: 225, alienCost: 0, dnaRate: 26,
+    unlocked: false, seqProgress: 0, seqPerArtifact: 15,
+    reqText: "Tier 2 Lore Expedition",
+    stats: { hp: 540, atk: 118, def: 92, heal: 25 }
+  },
+  mapinguari: {
+    name: "Mapinguari", tree: "Southern Lore", class: "Monster", rarity: "Epic",
+    maxPerCell: 2, cost: 205, alienCost: 0, dnaRate: 23,
+    unlocked: false, seqProgress: 0, seqPerArtifact: 15,
+    reqText: "Tier 2 Lore Expedition",
+    stats: { hp: 510, atk: 110, def: 85, heal: 30 }
+  },
+  chupacabrasAlado: {
+    name: "Chupacabras Alado", tree: "Southern Lore", class: "Demon", rarity: "Rare",
+    maxPerCell: 2, cost: 145, alienCost: 0, dnaRate: 16,
+    unlocked: false, seqProgress: 100, seqPerArtifact: 25,
+    evolvesFrom: "chupacabra", reqFragment: "Talon", reqText: "Evolve Chupacabra + Talon Shard",
+    stats: { hp: 315, atk: 85, def: 46, heal: 35 }
+  },
+
+  // ==========================================
+  // TREE 7: NOBLE EQUINES (4 Creatures)
+  // ==========================================
+  unicorn: {
+    name: "Monoceros (Unicorn)", tree: "Noble Equines", class: "Cryptid", rarity: "Rare",
+    maxPerCell: 2, cost: 135, alienCost: 0, dnaRate: 15,
+    unlocked: false, seqProgress: 0, seqPerArtifact: 25,
+    yields: "PureHorn", reqText: "Tier 1 Field Scan",
+    stats: { hp: 300, atk: 65, def: 55, heal: 85 }
+  },
+  pegasus: {
+    name: "Pegasus", tree: "Noble Equines", class: "Cryptid", rarity: "Rare",
+    maxPerCell: 2, cost: 145, alienCost: 0, dnaRate: 16,
+    unlocked: false, seqProgress: 0, seqPerArtifact: 25,
+    yields: "Wing", reqText: "Tier 1 Field Scan",
+    stats: { hp: 320, atk: 72, def: 58, heal: 70 }
+  },
+  chironCentaur: {
+    name: "Chiron Centaur", tree: "Noble Equines", class: "Cryptid", rarity: "Epic",
+    maxPerCell: 2, cost: 185, alienCost: 0, dnaRate: 21,
+    unlocked: false, seqProgress: 0, seqPerArtifact: 20,
+    reqText: "Tier 2 Lore Expedition",
+    stats: { hp: 410, atk: 96, def: 72, heal: 60 }
+  },
+  alicorn: {
+    name: "Alicorn", tree: "Noble Equines", class: "Spectral", rarity: "Epic",
+    maxPerCell: 1, cost: 245, alienCost: 0, dnaRate: 28,
+    unlocked: false, seqProgress: 100, seqPerArtifact: 15,
+    evolvesFrom: "unicorn", reqFragment: "Wing", reqText: "Evolve Monoceros + Wing Shard",
+    stats: { hp: 490, atk: 110, def: 90, heal: 120 }
+    // ==========================================
+  // TREE 8: CURSED WATER HORSES (3 Creatures)
+  // ==========================================
+  kelpie: {
+    name: "Kelpie", tree: "Water Horses", class: "Spectral", rarity: "Common",
+    maxPerCell: 3, cost: 85, alienCost: 0, dnaRate: 9,
+    unlocked: false, seqProgress: 0, seqPerArtifact: 35,
+    yields: "Tide", reqText: "Tier 1 Field Scan",
+    stats: { hp: 225, atk: 54, def: 38, heal: 30 }
+  },
+  eachUisge: {
+    name: "Each-Uisge", tree: "Water Horses", class: "Monster", rarity: "Rare",
+    maxPerCell: 2, cost: 135, alienCost: 0, dnaRate: 15,
+    unlocked: false, seqProgress: 0, seqPerArtifact: 25,
+    yields: "Blight", reqText: "Tier 2 Lore Expedition",
+    stats: { hp: 330, atk: 82, def: 48, heal: 25 }
+  },
+  nuckelavee: {
+    name: "Nuckelavee", tree: "Water Horses", class: "Demon", rarity: "Epic",
+    maxPerCell: 1, cost: 230, alienCost: 0, dnaRate: 26,
+    unlocked: false, seqProgress: 100, seqPerArtifact: 15,
+    evolvesFrom: "eachUisge", reqFragment: "Blight", reqText: "Evolve Each-Uisge + Blight Shard",
+    stats: { hp: 470, atk: 124, def: 64, heal: 20 }
+  },
+
+  // ==========================================
+  // TREE 9: MERFOLK & SEA GUARDIANS (5 Creatures)
+  // ==========================================
+  rusalka: {
+    name: "Rusalka", tree: "Merfolk", class: "Spectral", rarity: "Common",
+    maxPerCell: 3, cost: 75, alienCost: 0, dnaRate: 8,
+    unlocked: false, seqProgress: 0, seqPerArtifact: 40,
+    reqText: "Tier 1 Field Scan",
+    stats: { hp: 195, atk: 48, def: 32, heal: 50 }
+  },
+  selkie: {
+    name: "Selkie", tree: "Merfolk", class: "Cryptid", rarity: "Common",
+    maxPerCell: 4, cost: 80, alienCost: 0, dnaRate: 9,
+    unlocked: false, seqProgress: 0, seqPerArtifact: 40,
+    yields: "SealSkin", reqText: "Tier 1 Field Scan",
+    stats: { hp: 210, atk: 44, def: 42, heal: 65 }
+  },
+  hippocampus: {
+    name: "Hippocampus", tree: "Merfolk", class: "Cryptid", rarity: "Rare",
+    maxPerCell: 2, cost: 140, alienCost: 0, dnaRate: 16,
+    unlocked: false, seqProgress: 0, seqPerArtifact: 25,
+    reqText: "Tier 2 Lore Expedition",
+    stats: { hp: 345, atk: 74, def: 66, heal: 55 }
+  },
+  ichthyocentaur: {
+    name: "Ichthyocentaur", tree: "Merfolk", class: "Cryptid", rarity: "Epic",
+    maxPerCell: 2, cost: 195, alienCost: 0, dnaRate: 22,
+    unlocked: false, seqProgress: 100, seqPerArtifact: 20,
+    evolvesFrom: "chironCentaur", reqFragment: "Tide", reqText: "Evolve Chiron Centaur + Tide Shard",
+    stats: { hp: 430, atk: 98, def: 78, heal: 65 }
+  },
+  ningyo: {
+    name: "Ningyo", tree: "Merfolk", class: "Spectral", rarity: "Rare",
+    maxPerCell: 2, cost: 150, alienCost: 0, dnaRate: 17,
+    unlocked: false, seqProgress: 100, seqPerArtifact: 25,
+    evolvesFrom: "selkie", reqFragment: "SealSkin", reqText: "Evolve Selkie + Seal Skin Shard",
+    stats: { hp: 310, atk: 68, def: 58, heal: 95 }
+  },
+
+  // ==========================================
+  // TREE 10: ABYSSAL LEVIATHANS (4 Creatures)
+  // ==========================================
+  taniwha: {
+    name: "Taniwha", tree: "Leviathans", class: "Monster", rarity: "Rare",
+    maxPerCell: 2, cost: 155, alienCost: 0, dnaRate: 17,
+    unlocked: false, seqProgress: 0, seqPerArtifact: 25,
+    reqText: "Tier 2 Lore Expedition",
+    stats: { hp: 380, atk: 86, def: 64, heal: 35 }
+  },
+  hafgufa: {
+    name: "Hafgufa (Kraken)", tree: "Leviathans", class: "Monster", rarity: "Legendary",
+    maxPerCell: 2, cost: 350, alienCost: 0, dnaRate: 45,
+    unlocked: false, seqProgress: 0, seqPerArtifact: 10,
+    yields: "Abyssal", reqText: "Tier 3 Apex Relic Hunt",
+    stats: { hp: 850, atk: 165, def: 130, heal: 50 }
+  },
+  tiamatLeviathan: {
+    name: "Tiamat Leviathan", tree: "Leviathans", class: "Monster", rarity: "Legendary",
+    maxPerCell: 1, cost: 400, alienCost: 0, dnaRate: 52,
+    unlocked: false, seqProgress: 0, seqPerArtifact: 10,
+    reqText: "Tier 3 Apex Relic Hunt",
+    stats: { hp: 940, atk: 185, def: 150, heal: 65 }
+  },
+  bakeKujira: {
+    name: "Bake-kujira", tree: "Leviathans", class: "Spectral", rarity: "Epic",
+    maxPerCell: 1, cost: 240, alienCost: 0, dnaRate: 27,
+    unlocked: false, seqProgress: 100, seqPerArtifact: 15,
+    evolvesFrom: "taniwha", reqFragment: "Soul", reqText: "Evolve Taniwha + Soul Shard",
+    stats: { hp: 560, atk: 112, def: 96, heal: 70 }
+  },
+
+  // ==========================================
+  // TREE 11: ALCHEMICAL ELEMENTALS & FAE (5 Creatures)
+  // ==========================================
+  gnome: {
+    name: "Gnome", tree: "Elementals", class: "Cryptid", rarity: "Common",
+    maxPerCell: 4, cost: 55, alienCost: 0, dnaRate: 6,
+    unlocked: false, seqProgress: 0, seqPerArtifact: 50,
+    yields: "Earth", reqText: "Tier 1 Field Scan",
+    stats: { hp: 170, atk: 32, def: 45, heal: 30 }
+  },
+  fireSalamander: {
+    name: "Fire Salamander", tree: "Elementals", class: "Demon", rarity: "Common",
+    maxPerCell: 3, cost: 75, alienCost: 0, dnaRate: 8,
+    unlocked: false, seqProgress: 0, seqPerArtifact: 40,
+    yields: "Ember", reqText: "Tier 1 Field Scan",
+    stats: { hp: 190, atk: 56, def: 28, heal: 25 }
+  },
+  sylph: {
+    name: "Sylph", tree: "Elementals", class: "Spectral", rarity: "Rare",
+    maxPerCell: 3, cost: 110, alienCost: 0, dnaRate: 12,
+    unlocked: false, seqProgress: 0, seqPerArtifact: 34,
+    yields: "Gale", reqText: "Tier 1 Field Scan",
+    stats: { hp: 235, atk: 64, def: 40, heal: 60 }
+  },
+  undine: {
+    name: "Undine", tree: "Elementals", class: "Spectral", rarity: "Rare",
+    maxPerCell: 3, cost: 115, alienCost: 0, dnaRate: 13,
+    unlocked: false, seqProgress: 0, seqPerArtifact: 34,
+    reqText: "Tier 1 Field Scan",
+    stats: { hp: 250, atk: 58, def: 46, heal: 75 }
+  },
+  panSatyr: {
+    name: "Pan Satyr", tree: "Elementals", class: "Cryptid", rarity: "Rare",
+    maxPerCell: 3, cost: 120, alienCost: 0, dnaRate: 14,
+    unlocked: false, seqProgress: 100, seqPerArtifact: 25,
+    evolvesFrom: "gnome", reqFragment: "Hoof", reqText: "Evolve Gnome + Hoof Shard",
+    stats: { hp: 275, atk: 62, def: 44, heal: 65 }
+  },
+
+  // ==========================================
+  // TREE 12: VAMPIRES & BLOOD-DRINKERS (5 Creatures)
+  // ==========================================
+  zombi: {
+    name: "Zombi", tree: "Vampires", class: "Monster", rarity: "Common",
+    maxPerCell: 4, cost: 65, alienCost: 0, dnaRate: 7,
+    unlocked: false, seqProgress: 0, seqPerArtifact: 50,
+    reqText: "Tier 1 Field Scan",
+    stats: { hp: 215, atk: 44, def: 26, heal: 15 }
+  },
+  vetala: {
+    name: "Vetala", tree: "Vampires", class: "Demon", rarity: "Rare",
+    maxPerCell: 2, cost: 125, alienCost: 0, dnaRate: 14,
+    unlocked: false, seqProgress: 0, seqPerArtifact: 25,
+    yields: "Fang", reqText: "Tier 1 Field Scan",
+    stats: { hp: 290, atk: 80, def: 42, heal: 60 }
+  },
+  vrykolakas: {
+    name: "Vrykolakas", tree: "Vampires", class: "Demon", rarity: "Rare",
+    maxPerCell: 2, cost: 145, alienCost: 0, dnaRate: 16,
+    unlocked: false, seqProgress: 0, seqPerArtifact: 25,
+    yields: "Blight", reqText: "Tier 2 Lore Expedition",
+    stats: { hp: 335, atk: 88, def: 48, heal: 65 }
+  },
+  strigoi: {
+    name: "Strigoi", tree: "Vampires", class: "Demon", rarity: "Epic",
+    maxPerCell: 2, cost: 190, alienCost: 0, dnaRate: 22,
+    unlocked: false, seqProgress: 0, seqPerArtifact: 15,
+    reqText: "Tier 2 Lore Expedition",
+    stats: { hp: 410, atk: 106, def: 58, heal: 80 }
+  },
+  manananggal: {
+    name: "Manananggal", tree: "Vampires", class: "Demon", rarity: "Epic",
+    maxPerCell: 2, cost: 185, alienCost: 0, dnaRate: 21,
+    unlocked: false, seqProgress: 100, seqPerArtifact: 20,
+    evolvesFrom: "vetala", reqFragment: "Wing", reqText: "Evolve Vetala + Wing Shard",
+    stats: { hp: 380, atk: 112, def: 50, heal: 70 }
+    // ==========================================
+  // TREE 13: NORSE & SLAVIC UNDEAD (4 Creatures)
+  // ==========================================
+  draugr: {
+    name: "Draugr", tree: "Undead", class: "Monster", rarity: "Rare",
+    maxPerCell: 3, cost: 120, alienCost: 0, dnaRate: 13,
+    unlocked: false, seqProgress: 0, seqPerArtifact: 34,
+    reqText: "Tier 1 Field Scan",
+    stats: { hp: 310, atk: 74, def: 52, heal: 20 }
+  },
+  dullahan: {
+    name: "Dullahan", tree: "Undead", class: "Spectral", rarity: "Epic",
+    maxPerCell: 2, cost: 180, alienCost: 0, dnaRate: 20,
+    unlocked: false, seqProgress: 100, seqPerArtifact: 20,
+    evolvesFrom: "draugr", reqFragment: "Hoof", reqText: "Evolve Draugr + Hoof Shard",
+    stats: { hp: 400, atk: 102, def: 62, heal: 35 }
+  },
+  koschei: {
+    name: "Koschei the Deathless", tree: "Undead", class: "Demon", rarity: "Legendary",
+    maxPerCell: 1, cost: 345, alienCost: 0, dnaRate: 44,
+    unlocked: false, seqProgress: 0, seqPerArtifact: 10,
+    reqText: "Tier 3 Apex Relic Hunt",
+    stats: { hp: 760, atk: 168, def: 125, heal: 85 }
+  },
+  banshee: {
+    name: "Bean-Sídhe (Banshee)", tree: "Undead", class: "Spectral", rarity: "Rare",
+    maxPerCell: 2, cost: 130, alienCost: 0, dnaRate: 15,
+    unlocked: false, seqProgress: 0, seqPerArtifact: 25,
+    yields: "Soul", reqText: "Tier 1 Field Scan",
+    stats: { hp: 270, atk: 88, def: 40, heal: 50 }
+  },
+
+  // ==========================================
+  // TREE 14: GIANTS & STONE GUARDIANS (4 Creatures)
+  // ==========================================
+  jotunnTroll: {
+    name: "Jötunn Troll", tree: "Giants", class: "Monster", rarity: "Rare",
+    maxPerCell: 2, cost: 135, alienCost: 0, dnaRate: 15,
+    unlocked: false, seqProgress: 0, seqPerArtifact: 25,
+    reqText: "Tier 1 Field Scan",
+    stats: { hp: 380, atk: 78, def: 62, heal: 30 }
+  },
+  cyclops: {
+    name: "Polyphemus Cyclops", tree: "Giants", class: "Monster", rarity: "Epic",
+    maxPerCell: 2, cost: 195, alienCost: 0, dnaRate: 22,
+    unlocked: false, seqProgress: 0, seqPerArtifact: 15,
+    reqText: "Tier 2 Lore Expedition",
+    stats: { hp: 510, atk: 114, def: 82, heal: 25 }
+  },
+  chenoo: {
+    name: "Chenoo (Ice Giant)", tree: "Giants", class: "Monster", rarity: "Epic",
+    maxPerCell: 1, cost: 235, alienCost: 0, dnaRate: 27,
+    unlocked: false, seqProgress: 100, seqPerArtifact: 15,
+    evolvesFrom: "jotunnTroll", reqFragment: "Frost", reqText: "Evolve Jötunn + Frost Shard",
+    stats: { hp: 580, atk: 126, def: 94, heal: 35 }
+  },
+  gargoyle: {
+    name: "Gargoyle", tree: "Giants", class: "Cryptid", rarity: "Rare",
+    maxPerCell: 3, cost: 125, alienCost: 0, dnaRate: 14,
+    unlocked: false, seqProgress: 100, seqPerArtifact: 25,
+    evolvesFrom: "gnome", reqFragment: "Earth", reqText: "Evolve Gnome + Earth Shard",
+    stats: { hp: 320, atk: 68, def: 78, heal: 25 }
+  },
+
+  // ==========================================
+  // TREE 15: ORCS & LABYRINTH BEASTS (5 Creatures)
+  // ==========================================
+  orcneas: {
+    name: "Orcneas (Orc)", tree: "Labyrinth", class: "Monster", rarity: "Common",
+    maxPerCell: 4, cost: 70, alienCost: 0, dnaRate: 8,
+    unlocked: false, seqProgress: 0, seqPerArtifact: 40,
+    reqText: "Tier 1 Field Scan",
+    stats: { hp: 220, atk: 52, def: 34, heal: 15 }
+  },
+  minotaur: {
+    name: "Asterion Minotaur", tree: "Labyrinth", class: "Monster", rarity: "Rare",
+    maxPerCell: 2, cost: 150, alienCost: 0, dnaRate: 17,
+    unlocked: false, seqProgress: 0, seqPerArtifact: 25,
+    yields: "Hoof", reqText: "Tier 2 Lore Expedition",
+    stats: { hp: 390, atk: 92, def: 64, heal: 25 }
+  },
+  gorgon: {
+    name: "Medusa Gorgon", tree: "Labyrinth", class: "Demon", rarity: "Epic",
+    maxPerCell: 2, cost: 205, alienCost: 0, dnaRate: 23,
+    unlocked: false, seqProgress: 0, seqPerArtifact: 15,
+    reqText: "Tier 2 Lore Expedition",
+    stats: { hp: 430, atk: 112, def: 68, heal: 45 }
+  },
+  sphinx: {
+    name: "Giza Sphinx", tree: "Labyrinth", class: "Cryptid", rarity: "Epic",
+    maxPerCell: 1, cost: 220, alienCost: 0, dnaRate: 25,
+    unlocked: false, seqProgress: 0, seqPerArtifact: 15,
+    yields: "Lion", reqText: "Tier 2 Lore Expedition",
+    stats: { hp: 480, atk: 105, def: 88, heal: 60 }
+  },
+  seaOrc: {
+    name: "Sea Orc (Orcus)", tree: "Labyrinth", class: "Monster", rarity: "Epic",
+    maxPerCell: 2, cost: 215, alienCost: 0, dnaRate: 24,
+    unlocked: false, seqProgress: 100, seqPerArtifact: 15,
+    evolvesFrom: "orcneas", reqFragment: "Abyssal", reqText: "Evolve Orcneas + Abyssal Shard",
+    stats: { hp: 490, atk: 116, def: 78, heal: 35 }
+  },
+
+  // ==========================================
+  // TREE 16: MESOAMERICAN & ANDEAN DEITIES (4 Creatures)
+  // ==========================================
+  cipactli: {
+    name: "Cipactli", tree: "Mesoamerican", class: "Monster", rarity: "Epic",
+    maxPerCell: 1, cost: 230, alienCost: 0, dnaRate: 26,
+    unlocked: false, seqProgress: 0, seqPerArtifact: 15,
+    reqText: "Tier 2 Lore Expedition",
+    stats: { hp: 560, atk: 120, def: 90, heal: 35 }
+  },
+  camazotz: {
+    name: "Camazotz", tree: "Mesoamerican", class: "Demon", rarity: "Epic",
+    maxPerCell: 2, cost: 210, alienCost: 0, dnaRate: 24,
+    unlocked: false, seqProgress: 0, seqPerArtifact: 15,
+    yields: "Talon", reqText: "Tier 2 Lore Expedition",
+    stats: { hp: 440, atk: 118, def: 66, heal: 55 }
+  },
+  quetzalcoatl: {
+    name: "Quetzalcoatl", tree: "Mesoamerican", class: "Spectral", rarity: "Legendary",
+    maxPerCell: 1, cost: 380, alienCost: 0, dnaRate: 48,
+    unlocked: false, seqProgress: 0, seqPerArtifact: 10,
+    reqText: "Tier 3 Apex Relic Hunt",
+    stats: { hp: 820, atk: 175, def: 135, heal: 105 }
+  },
+  xiuhcoatl: {
+    name: "Xiuhcoatl", tree: "Mesoamerican", class: "Demon", rarity: "Epic",
+    maxPerCell: 1, cost: 260, alienCost: 0, dnaRate: 30,
+    unlocked: false, seqProgress: 100, seqPerArtifact: 15,
+    evolvesFrom: "lindworm", reqFragment: "Solar", reqText: "Evolve Lindworm + Solar Shard",
+    stats: { hp: 520, atk: 135, def: 85, heal: 55 }
+  },
+
+  // ==========================================
+  // TREE 17: SERPENTS & CHIMERIC REPTILES (4 Creatures)
+  // ==========================================
+  basilisk: {
+    name: "Basileus Basilisk", tree: "Serpents", class: "Monster", rarity: "Rare",
+    maxPerCell: 2, cost: 145, alienCost: 0, dnaRate: 16,
+    unlocked: false, seqProgress: 0, seqPerArtifact: 25,
+    reqText: "Tier 1 Field Scan",
+    stats: { hp: 330, atk: 84, def: 52, heal: 25 }
+  },
+  hydra: {
+    name: "Lernaean Hydra", tree: "Serpents", class: "Monster", rarity: "Epic",
+    maxPerCell: 1, cost: 240, alienCost: 0, dnaRate: 28,
+    unlocked: false, seqProgress: 0, seqPerArtifact: 15,
+    reqText: "Tier 2 Lore Expedition",
+    stats: { hp: 620, atk: 122, def: 88, heal: 90 }
+  },
+  jormungandr: {
+    name: "Jörmungandr", tree: "Serpents", class: "Monster", rarity: "Legendary",
+    maxPerCell: 1, cost: 410, alienCost: 0, dnaRate: 54,
+    unlocked: false, seqProgress: 0, seqPerArtifact: 10,
+    reqText: "Tier 3 Apex Relic Hunt",
+    stats: { hp: 980, atk: 190, def: 155, heal: 55 }
+  },
+  chimera: {
+    name: "Lycian Chimera", tree: "Serpents", class: "Demon", rarity: "Epic",
+    maxPerCell: 1, cost: 225, alienCost: 0, dnaRate: 26,
+    unlocked: false, seqProgress: 100, seqPerArtifact: 15,
+    evolvesFrom: "fireSalamander", reqFragment: "Lion", reqText: "Evolve Fire Salamander + Lion Shard",
+    stats: { hp: 510, atk: 128, def: 78, heal: 40 }
+    // ==========================================
+  // TREE 18: TRUE DRAGONS & WYRMS (4 Creatures)
+  // ==========================================
+  lindworm: {
+    name: "Lindworm", tree: "True Dragons", class: "Monster", rarity: "Rare",
+    maxPerCell: 2, cost: 140, alienCost: 0, dnaRate: 15,
+    unlocked: false, seqProgress: 0, seqPerArtifact: 25,
+    reqText: "Tier 1 Field Scan",
+    stats: { hp: 340, atk: 78, def: 58, heal: 30 }
+  },
+  wyvern: {
+    name: "Welsh Wyvern", tree: "True Dragons", class: "Monster", rarity: "Rare",
+    maxPerCell: 2, cost: 165, alienCost: 0, dnaRate: 18,
+    unlocked: false, seqProgress: 0, seqPerArtifact: 25,
+    reqText: "Tier 2 Lore Expedition",
+    stats: { hp: 390, atk: 94, def: 64, heal: 35 }
+  },
+  fafnir: {
+    name: "Fafnir (Draco)", tree: "True Dragons", class: "Demon", rarity: "Epic",
+    maxPerCell: 1, cost: 250, alienCost: 0, dnaRate: 29,
+    unlocked: false, seqProgress: 0, seqPerArtifact: 15,
+    reqText: "Tier 2 Lore Expedition",
+    stats: { hp: 590, atk: 136, def: 96, heal: 45 }
+  },
+  ryujin: {
+    name: "Ryūjin Dragon", tree: "True Dragons", class: "Monster", rarity: "Legendary",
+    maxPerCell: 1, cost: 390, alienCost: 0, dnaRate: 50,
+    unlocked: false, seqProgress: 0, seqPerArtifact: 10,
+    yields: "Dragon", reqText: "Tier 3 Apex Relic Hunt",
+    stats: { hp: 900, atk: 185, def: 145, heal: 60 }
+  },
+
+  // ==========================================
+  // TREE 19: SOLAR BIRDS & CELESTIAL BEASTS (3 Creatures)
+  // ==========================================
+  bennu: {
+    name: "Bennu Phoenix", tree: "Solar Birds", class: "Demon", rarity: "Epic",
+    maxPerCell: 1, cost: 220, alienCost: 0, dnaRate: 25,
+    unlocked: false, seqProgress: 0, seqPerArtifact: 15,
+    yields: "Solar", isPhoenix: true, reqText: "Tier 2 Lore Expedition (7-Day Ash Rebirth)",
+    stats: { hp: 430, atk: 115, def: 65, heal: 115 }
+  },
+  fenghuang: {
+    name: "Fenghuang", tree: "Solar Birds", class: "Spectral", rarity: "Epic",
+    maxPerCell: 1, cost: 245, alienCost: 0, dnaRate: 28,
+    unlocked: false, seqProgress: 0, seqPerArtifact: 15,
+    reqText: "Tier 2 Lore Expedition",
+    stats: { hp: 470, atk: 112, def: 82, heal: 130 }
+  },
+  qilin: {
+    name: "Qilin", tree: "Solar Birds", class: "Spectral", rarity: "Epic",
+    maxPerCell: 1, cost: 235, alienCost: 0, dnaRate: 27,
+    unlocked: false, seqProgress: 100, seqPerArtifact: 15,
+    evolvesFrom: "unicorn", reqFragment: "PureHorn", reqText: "Evolve Monoceros + Pure Horn Shard",
+    stats: { hp: 480, atk: 108, def: 88, heal: 115 }
+  },
+
+  // ==========================================
+  // TREE 20: JAPANESE YOKAI — SPIRITS & 9-LIVES FELINES (6 Creatures)
+  // ==========================================
+  kappa: {
+    name: "Kappa", tree: "Yokai Spirits", class: "Cryptid", rarity: "Common",
+    maxPerCell: 3, cost: 80, alienCost: 0, dnaRate: 9,
+    unlocked: false, seqProgress: 0, seqPerArtifact: 35,
+    yields: "Mountain", reqText: "Tier 1 Field Scan",
+    stats: { hp: 215, atk: 50, def: 44, heal: 35 }
+  },
+  tengu: {
+    name: "Tengu", tree: "Yokai Spirits", class: "Spectral", rarity: "Rare",
+    maxPerCell: 2, cost: 140, alienCost: 0, dnaRate: 16,
+    unlocked: false, seqProgress: 0, seqPerArtifact: 25,
+    yields: "Gale", reqText: "Tier 1 Field Scan",
+    stats: { hp: 315, atk: 84, def: 52, heal: 45 }
+  },
+  jorogumo: {
+    name: "Jorōgumo", tree: "Yokai Spirits", class: "Demon", rarity: "Epic",
+    maxPerCell: 2, cost: 195, alienCost: 0, dnaRate: 22,
+    unlocked: false, seqProgress: 0, seqPerArtifact: 15,
+    reqText: "Tier 2 Lore Expedition",
+    stats: { hp: 410, atk: 108, def: 60, heal: 50 }
+  },
+  kitsunebi: {
+    name: "Kitsune-bi", tree: "Yokai Spirits", class: "Spectral", rarity: "Common",
+    maxPerCell: 4, cost: 75, alienCost: 0, dnaRate: 8,
+    unlocked: false, seqProgress: 0, seqPerArtifact: 40,
+    yields: "Spirit", reqText: "Tier 1 Field Scan",
+    stats: { hp: 180, atk: 48, def: 30, heal: 45 }
+  },
+  bakeneko: {
+    name: "Bakeneko", tree: "Yokai Spirits", class: "Spectral", rarity: "Rare",
+    maxPerCell: 2, cost: 150, alienCost: 0, dnaRate: 17,
+    unlocked: false, seqProgress: 0, seqPerArtifact: 25,
+    lives: 9, reqText: "Tier 2 Lore Expedition (9 Lives)",
+    stats: { hp: 290, atk: 78, def: 48, heal: 60 }
+  },
+  nekomata: {
+    name: "Nekomata", tree: "Yokai Spirits", class: "Demon", rarity: "Epic",
+    maxPerCell: 2, cost: 215, alienCost: 0, dnaRate: 24,
+    unlocked: false, seqProgress: 100, seqPerArtifact: 15,
+    evolvesFrom: "bakeneko", reqFragment: "Soul", lives: 9, reqText: "Evolve Bakeneko + Soul Shard (9 Lives)",
+    stats: { hp: 380, atk: 104, def: 62, heal: 75 }
+  },
+
+  // ==========================================
+  // TREE 21: JAPANESE YOKAI — ONI & REAPERS (4 Creatures)
+  // ==========================================
+  gashadokuro: {
+    name: "Gashadokuro", tree: "Yokai Reapers", class: "Monster", rarity: "Epic",
+    maxPerCell: 1, cost: 230, alienCost: 0, dnaRate: 26,
+    unlocked: false, seqProgress: 0, seqPerArtifact: 15,
+    yields: "Shadow", reqText: "Tier 2 Lore Expedition",
+    stats: { hp: 560, atk: 125, def: 85, heal: 20 }
+  },
+  shinigami: {
+    name: "Shinigami", tree: "Yokai Reapers", class: "Demon", rarity: "Legendary",
+    maxPerCell: 1, cost: 365, alienCost: 0, dnaRate: 46,
+    unlocked: false, seqProgress: 0, seqPerArtifact: 10,
+    reqText: "Tier 3 Apex Relic Hunt",
+    stats: { hp: 780, atk: 180, def: 120, heal: 70 }
+  },
+  yamataNoOrochi: {
+    name: "Yamata-no-Orochi", tree: "Yokai Reapers", class: "Monster", rarity: "Legendary",
+    maxPerCell: 1, cost: 420, alienCost: 0, dnaRate: 55,
+    unlocked: false, seqProgress: 0, seqPerArtifact: 10,
+    reqText: "Tier 3 Apex Relic Hunt",
+    stats: { hp: 960, atk: 195, def: 148, heal: 65 }
+  },
+  shutenDoji: {
+    name: "Shuten-dōji (Oni)", tree: "Yokai Reapers", class: "Demon", rarity: "Epic",
+    maxPerCell: 1, cost: 220, alienCost: 0, dnaRate: 25,
+    unlocked: false, seqProgress: 100, seqPerArtifact: 15,
+    evolvesFrom: "orcneas", reqFragment: "Ember", reqText: "Evolve Orcneas + Ember Shard",
+    stats: { hp: 530, atk: 132, def: 82, heal: 30 }
+  },
+
+  // ==========================================
+  // TREE 22: INFERNAL, JINN & BUSH LORE (6 Creatures)
+  // ==========================================
+  koboldImp: {
+    name: "Kobold Imp", tree: "Infernal Lore", class: "Demon", rarity: "Common",
+    maxPerCell: 4, cost: 60, alienCost: 0, dnaRate: 6,
+    unlocked: false, seqProgress: 0, seqPerArtifact: 50,
+    reqText: "Tier 1 Field Scan",
+    stats: { hp: 165, atk: 46, def: 24, heal: 25 }
+  },
+  aluIncubus: {
+    name: "Alu (Incubus)", tree: "Infernal Lore", class: "Demon", rarity: "Rare",
+    maxPerCell: 2, cost: 135, alienCost: 0, dnaRate: 15,
+    unlocked: false, seqProgress: 0, seqPerArtifact: 25,
+    reqText: "Tier 1 Field Scan",
+    stats: { hp: 295, atk: 82, def: 46, heal: 55 }
+  },
+  baphomet: {
+    name: "Baphomet", tree: "Infernal Lore", class: "Demon", rarity: "Epic",
+    maxPerCell: 1, cost: 235, alienCost: 0, dnaRate: 27,
+    unlocked: false, seqProgress: 0, seqPerArtifact: 15,
+    reqText: "Tier 2 Lore Expedition",
+    stats: { hp: 510, atk: 126, def: 84, heal: 75 }
+  },
+  ifrit: {
+    name: "Ifrit", tree: "Infernal Lore", class: "Demon", rarity: "Legendary",
+    maxPerCell: 1, cost: 355, alienCost: 0, dnaRate: 45,
+    unlocked: false, seqProgress: 0, seqPerArtifact: 10,
+    reqText: "Tier 3 Apex Relic Hunt",
+    stats: { hp: 790, atk: 182, def: 122, heal: 60 }
+  },
+  krampus: {
+    name: "Krampus", tree: "Infernal Lore", class: "Demon", rarity: "Epic",
+    maxPerCell: 2, cost: 190, alienCost: 0, dnaRate: 21,
+    unlocked: false, seqProgress: 100, seqPerArtifact: 20,
+    evolvesFrom: "koboldImp", reqFragment: "Horn", reqText: "Evolve Kobold Imp + Horn Shard",
+    stats: { hp: 440, atk: 108, def: 68, heal: 35 }
+  },
+  bunyip: {
+    name: "Bunyip", tree: "Infernal Lore", class: "Monster", rarity: "Rare",
+    maxPerCell: 2, cost: 145, alienCost: 0, dnaRate: 16,
+    unlocked: false, seqProgress: 100, seqPerArtifact: 25,
+    evolvesFrom: "taniwha", reqFragment: "Blight", reqText: "Evolve Taniwha + Blight Shard",
+    stats: { hp: 395, atk: 88, def: 62, heal: 30 }
+    // ==========================================
+  // TREE 23: MASTER 9-TAILED KITSUNE LINE (9 Creatures)
+  // ==========================================
+  kitsune: {
+    name: "Kitsune (Scales w/ Tails)", tree: "Master Fox Line", class: "Spectral", rarity: "Rare",
+    maxPerCell: 2, cost: 100, alienCost: 0, dnaRate: 12,
+    unlocked: true, seqProgress: 100, seqPerArtifact: 50,
+    reqText: "Starter Fox Base (Reaches God-Tier at 9 Tails)",
+    stats: { hp: 250, atk: 55, def: 40, heal: 60 }
+  },
+  enfield: {
+    name: "Enfield", tree: "Master Fox Line", class: "Cryptid", rarity: "Rare",
+    maxPerCell: 2, cost: 130, alienCost: 0, dnaRate: 14,
+    unlocked: false, seqProgress: 100, seqPerArtifact: 25,
+    evolvesFrom: "kitsune", reqFragment: "Eagle", addsTail: true, reqText: "Evolve Kitsune + Eagle Shard (+1 Tail)",
+    stats: { hp: 300, atk: 72, def: 52, heal: 35 }
+  },
+  inugami: {
+    name: "Inugami", tree: "Master Fox Line", class: "Spectral", rarity: "Rare",
+    maxPerCell: 2, cost: 135, alienCost: 0, dnaRate: 15,
+    unlocked: false, seqProgress: 100, seqPerArtifact: 25,
+    evolvesFrom: "kitsune", reqFragment: "Hound", addsTail: true, reqText: "Evolve Kitsune + Hound Shard (+1 Tail)",
+    stats: { hp: 310, atk: 76, def: 50, heal: 40 }
+  },
+  kumiho: {
+    name: "Kumiho", tree: "Master Fox Line", class: "Demon", rarity: "Epic",
+    maxPerCell: 2, cost: 165, alienCost: 0, dnaRate: 18,
+    unlocked: false, seqProgress: 100, seqPerArtifact: 15,
+    evolvesFrom: "kitsune", reqFragment: "Soul", addsTail: true, reqText: "Evolve Kitsune + Soul Shard (+1 Tail)",
+    stats: { hp: 350, atk: 90, def: 55, heal: 65 }
+  },
+  huliJing: {
+    name: "Huli Jing", tree: "Master Fox Line", class: "Spectral", rarity: "Epic",
+    maxPerCell: 2, cost: 170, alienCost: 0, dnaRate: 19,
+    unlocked: false, seqProgress: 100, seqPerArtifact: 15,
+    evolvesFrom: "kitsune", reqFragment: "Spirit", addsTail: true, reqText: "Evolve Kitsune + Spirit Shard (+1 Tail)",
+    stats: { hp: 360, atk: 88, def: 60, heal: 75 }
+  },
+  nogitsune: {
+    name: "Nogitsune", tree: "Master Fox Line", class: "Demon", rarity: "Epic",
+    maxPerCell: 2, cost: 185, alienCost: 0, dnaRate: 21,
+    unlocked: false, seqProgress: 100, seqPerArtifact: 15,
+    evolvesFrom: "kitsune", reqFragment: "Shadow", addsTail: true, reqText: "Evolve Kitsune + Shadow Shard (+1 Tail)",
+    stats: { hp: 380, atk: 102, def: 58, heal: 55 }
+  },
+  teumessian: {
+    name: "Teumessian Fox", tree: "Master Fox Line", class: "Cryptid", rarity: "Epic",
+    maxPerCell: 1, cost: 200, alienCost: 0, dnaRate: 23,
+    unlocked: false, seqProgress: 100, seqPerArtifact: 15,
+    evolvesFrom: "kitsune", reqFragment: "Solar", addsTail: true, reqText: "Evolve Kitsune + Solar Shard (+1 Tail)",
+    stats: { hp: 410, atk: 108, def: 68, heal: 60 }
+  },
+  tulikettu: {
+    name: "Tulikettu", tree: "Master Fox Line", class: "Spectral", rarity: "Epic",
+    maxPerCell: 1, cost: 215, alienCost: 0, dnaRate: 25,
+    unlocked: false, seqProgress: 100, seqPerArtifact: 15,
+    evolvesFrom: "kitsune", reqFragment: "Frost", addsTail: true, reqText: "Evolve Kitsune + Frost Shard (+1 Tail)",
+    stats: { hp: 430, atk: 112, def: 75, heal: 70 }
+  },
+  tenko: {
+    name: "Tenko (Tamamo-no-Mae)", tree: "Master Fox Line", class: "Spectral", rarity: "Legendary",
+    maxPerCell: 1, cost: 360, alienCost: 0, dnaRate: 48,
+    unlocked: false, seqProgress: 100, seqPerArtifact: 10,
+    evolvesFrom: "kitsune", reqFragment: "Dragon", addsTail: true, reqText: "Evolve Kitsune + Dragon Shard (9th Tail!)",
+    stats: { hp: 820, atk: 180, def: 138, heal: 120 }
+  },
+
+  // ==========================================
+  // TREE 24: EXTRATERRESTRIAL UFOLOGY (7 Creatures - UFO Repairs)
+  // ==========================================
+  zetaGrey: {
+    name: "Zeta Reticulan Grey", tree: "UFO Aliens", class: "Alien", rarity: "Rare",
+    maxPerCell: 3, cost: 120, alienCost: 10, dnaRate: 22,
+    unlocked: false, seqProgress: 100, seqPerArtifact: 25,
+    alienOnly: true, reqText: "UFO Sector 02 Repair",
+    stats: { hp: 310, atk: 75, def: 55, heal: 80 }
+  },
+  flatwoodsMonster: {
+    name: "Flatwoods Monster", tree: "UFO Aliens", class: "Alien", rarity: "Rare",
+    maxPerCell: 2, cost: 145, alienCost: 15, dnaRate: 26,
+    unlocked: false, seqProgress: 100, seqPerArtifact: 25,
+    alienOnly: true, reqText: "UFO Sector 02 Repair",
+    stats: { hp: 360, atk: 88, def: 64, heal: 50 }
+  },
+  hopkinsvilleGoblin: {
+    name: "Hopkinsville Goblin", tree: "UFO Aliens", class: "Alien", rarity: "Epic",
+    maxPerCell: 3, cost: 175, alienCost: 20, dnaRate: 30,
+    unlocked: false, seqProgress: 100, seqPerArtifact: 20,
+    alienOnly: true, reqText: "UFO Sector 03 Repair",
+    stats: { hp: 410, atk: 105, def: 72, heal: 65 }
+  },
+  draconianReptilian: {
+    name: "Draconian Reptilian", tree: "UFO Aliens", class: "Alien", rarity: "Legendary",
+    maxPerCell: 1, cost: 340, alienCost: 40, dnaRate: 52,
+    unlocked: false, seqProgress: 100, seqPerArtifact: 10,
+    alienOnly: true, reqText: "UFO Sector 04 Repair",
+    stats: { hp: 840, atk: 178, def: 136, heal: 70 }
+  },
+  doverDemon: {
+    name: "Dover Demon", tree: "UFO Aliens", class: "Alien", rarity: "Rare",
+    maxPerCell: 3, cost: 150, alienCost: 15, dnaRate: 25,
+    unlocked: false, seqProgress: 100, seqPerArtifact: 25,
+    evolvesFrom: "zetaGrey", reqFragment: "Forest", reqText: "Evolve Zeta Grey + Forest Shard",
+    stats: { hp: 340, atk: 86, def: 60, heal: 75 }
+  },
+  fresnoNightcrawler: {
+    name: "Fresno Nightcrawler", tree: "UFO Aliens", class: "Alien", rarity: "Rare",
+    maxPerCell: 4, cost: 140, alienCost: 12, dnaRate: 24,
+    unlocked: false, seqProgress: 100, seqPerArtifact: 25,
+    evolvesFrom: "zetaGrey", reqFragment: "Gale", reqText: "Evolve Zeta Grey + Gale Shard",
+    stats: { hp: 300, atk: 78, def: 68, heal: 85 }
+  },
+  chitauriSerpent: {
+    name: "Chitauri Star-Serpent", tree: "UFO Aliens", class: "Alien", rarity: "Epic",
+    maxPerCell: 1, cost: 240, alienCost: 30, dnaRate: 38,
+    unlocked: false, seqProgress: 100, seqPerArtifact: 15,
+    evolvesFrom: "flatwoodsMonster", reqFragment: "Storm", reqText: "Evolve Flatwoods + Storm Shard",
+    stats: { hp: 550, atk: 132, def: 92, heal: 65 }
+  },
+
+  // ==========================================
+  // TREE 25: H.P. LOVECRAFT MYTHOS (6 Creatures - Supporter Add-On)
+  // ==========================================
+  deepOne: {
+    name: "Deep One", tree: "Lovecraft Mythos", class: "Alien", rarity: "Rare",
+    maxPerCell: 3, cost: 140, alienCost: 15, dnaRate: 25,
+    unlocked: false, seqProgress: 100, seqPerArtifact: 25,
+    lovecraftDLC: true, yields: "Eldritch", reqText: "Lovecraft Mythos Add-On",
+    stats: { hp: 360, atk: 85, def: 65, heal: 45 }
+  },
+  miGo: {
+    name: "Mi-Go (Fungi of Yuggoth)", tree: "Lovecraft Mythos", class: "Alien", rarity: "Epic",
+    maxPerCell: 2, cost: 190, alienCost: 25, dnaRate: 34,
+    unlocked: false, seqProgress: 100, seqPerArtifact: 15,
+    lovecraftDLC: true, reqText: "Lovecraft Mythos Add-On",
+    stats: { hp: 460, atk: 115, def: 85, heal: 65 }
+  },
+  nightgaunt: {
+    name: "Nightgaunt", tree: "Lovecraft Mythos", class: "Spectral", rarity: "Epic",
+    maxPerCell: 2, cost: 205, alienCost: 25, dnaRate: 36,
+    unlocked: false, seqProgress: 100, seqPerArtifact: 15,
+    lovecraftDLC: true, evolvesFrom: "miGo", reqFragment: "Wing", reqText: "Evolve Mi-Go + Wing Shard",
+    stats: { hp: 480, atk: 122, def: 88, heal: 70 }
+  },
+  byakhee: {
+    name: "Byakhee", tree: "Lovecraft Mythos", class: "Demon", rarity: "Epic",
+    maxPerCell: 2, cost: 220, alienCost: 30, dnaRate: 38,
+    unlocked: false, seqProgress: 100, seqPerArtifact: 15,
+    lovecraftDLC: true, evolvesFrom: "miGo", reqFragment: "Storm", reqText: "Evolve Mi-Go + Storm Shard",
+    stats: { hp: 510, atk: 128, def: 86, heal: 60 }
+  },
+  shoggoth: {
+    name: "Shoggoth", tree: "Lovecraft Mythos", class: "Monster", rarity: "Legendary",
+    maxPerCell: 1, cost: 340, alienCost: 45, dnaRate: 56,
+    unlocked: false, seqProgress: 100, seqPerArtifact: 10,
+    lovecraftDLC: true, reqText: "Lovecraft Mythos Add-On",
+    stats: { hp: 890, atk: 176, def: 142, heal: 90 }
+  },
+  cthulhuSpawn: {
+    name: "Star-Spawn of Cthulhu", tree: "Lovecraft Mythos", class: "Alien", rarity: "Legendary",
+    maxPerCell: 1, cost: 460, alienCost: 75, dnaRate: 85,
+    unlocked: false, seqProgress: 100, seqPerArtifact: 10,
+    lovecraftDLC: true, evolvesFrom: "deepOne", reqFragment: "Eldritch", reqText: "Evolve Deep One + Eldritch Shard",
+    stats: { hp: 1150, atk: 215, def: 170, heal: 125 }
+  }
+};
+
+// ==========================================
+// GAME CONFIGURATION & SUPPORTER PRODUCT IDS
+// ==========================================
+const PINATA_PRODUCT_ID = "REPLACE_WITH_GUMROAD_PINATA_ID";
+const LOVECRAFT_PRODUCT_ID = "REPLACE_WITH_GUMROAD_LOVECRAFT_ID";
+
+let state = {
+  basicDNA: 150,
+  alienDNA: 0,
+  cursedCandy: 0,
+  hasPinataDLC: false,
+  hasLovecraftDLC: false,
+  hasPhoenixChamber: false,
+  activeSector: 1,
+  ufoSector: 1,
+  foxTails: 1,
+  shards: [],
+  memorial: [],
+  cells: [
+    {
+      id: 1,
+      species: "rockApe",
+      occupants: [
+        { uid: 1, name: "Rock Ape", morph: "Standard", hp: 200, maxHp: 200, atk: 40, def: 30, heal: 15 }
+      ]
+    },
+    { id: 2, species: null, occupants: [] },
+    { id: 3, species: null, occupants: [] },
+    { id: 4, species: null, occupants: [] }
+  ]
+};
+
+let battle = {
+  active: false,
+  isWild: false,
+  playerCellId: null,
+  playerUid: null,
+  playerUnit: null,
+  enemyUnit: null,
+  defending: false
+};
+
+// ==========================================
+// BUILT-IN SYNTH SOUND EFFECTS (ZERO ASSETS)
+// ==========================================
+const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+function playTone(freq, type = "sine", duration = 0.15) {
+  if (audioCtx.state === "suspended") audioCtx.resume();
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  osc.type = type;
+  osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+  gain.gain.setValueAtTime(0.08, audioCtx.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+  osc.connect(gain);
+  gain.connect(audioCtx.destination);
+  osc.start();
+  osc.stop(audioCtx.currentTime + duration);
+}
+
+// ==========================================
+// PROCEDURAL HEXAGONAL CLASS EMBLEMS
+// ==========================================
+function getClassSvg(cls, morph) {
+  const colors = {
+    Cryptid: "#2ea043",
+    Monster: "#da3633",
+    Spectral: "#58a6ff",
+    Demon: "#f0883e",
+    Alien: "#a371f7"
+  };
+  const c = colors[cls] || "#c9d1d9";
+  return `<svg class="emblem morph-${morph}" viewBox="0 0 64 64">
+    <polygon points="32,4 60,20 60,44 32,60 4,44 4,20" fill="none" stroke="${c}" stroke-width="3"/>
+    <circle cx="32" cy="32" r="12" fill="${c}" opacity="0.65"/>
+  </svg>`;
+}
+
+// ==========================================
+// AUTO-SAVE & LOAD SYSTEM
+// ==========================================
+if (localStorage.getItem("acf_alchemy_save_v1")) {
+  try {
+    const loaded = JSON.parse(localStorage.getItem("acf_alchemy_save_v1"));
+    Object.assign(state, loaded.state);
+    Object.keys(loaded.progress || {}).forEach(k => {
+      if (CREATURES_DB[k]) {
+        CREATURES_DB[k].unlocked = loaded.progress[k].unlocked;
+        CREATURES_DB[k].seqProgress = loaded.progress[k].seqProgress;
+      }
+    });
+  } catch (e) {}
+}
+
+function saveGame() {
+  const progress = {};
+  Object.keys(CREATURES_DB).forEach(k => {
+    progress[k] = {
+      unlocked: CREATURES_DB[k].unlocked,
+      seqProgress: CREATURES_DB[k].seqProgress
+    };
+  });
+  localStorage.setItem("acf_alchemy_save_v1", JSON.stringify({ state, progress }));
+}
+
+function getLivingCreatureCount() {
+  return state.cells.reduce((sum, c) => {
+    return sum + c.occupants.filter(o => !o.isAshPile).length;
+  }, 0);
+}
+
+function setStatus(msg) {
+  document.getElementById("status-bar").innerText = msg;
+}
+// ==========================================
+// PASSIVE DNA & CURSED CANDY GENERATION LOOP
+// ==========================================
+setInterval(() => {
+  let dnaGain = 0;
+  state.cells.forEach(c => {
+    if (c.species && c.occupants.length > 0) {
+      const activeCount = c.occupants.filter(o => !o.isAshPile).length;
+      if (activeCount > 0) {
+        let mult = c.species === "kitsune" ? (1 + (state.foxTails - 1) * 0.25) : 1;
+        dnaGain += Math.round(CREATURES_DB[c.species].dnaRate * activeCount * mult);
+      }
+    }
+  });
+
+  state.basicDNA += dnaGain;
+  if (state.hasPinataDLC) state.cursedCandy += 5;
+
+  saveGame();
+  renderHUD();
+}, 2500);
+
+// ==========================================
+// TAB & SECTOR NAVIGATION
+// ==========================================
+function switchTab(tabName) {
+  playTone(520, "triangle", 0.08);
+  document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
+  document.getElementById(`tab-${tabName}`).classList.add("active");
+  renderAll();
+}
+
+function selectSector(sectorNum) {
+  playTone(460, "sine", 0.06);
+  state.activeSector = sectorNum;
+  renderAll();
+}
+
+// ==========================================
+// UFO SECTOR REPAIRS (+4 CELLS & ALIEN DNA)
+// ==========================================
+function repairUfoSector() {
+  const cost = state.ufoSector * 250;
+  if (state.basicDNA < cost) {
+    return setStatus(`Need ${cost} Basic DNA to repair Sector 0${state.ufoSector + 1}.`);
+  }
+
+  state.basicDNA -= cost;
+  state.ufoSector += 1;
+  state.activeSector = state.ufoSector;
+  state.alienDNA += 30;
+  playTone(300, "sawtooth", 0.3);
+
+  // Unlock UFO Alien direct-line species by sector tier
+  if (state.ufoSector >= 2) {
+    CREATURES_DB.zetaGrey.unlocked = true;
+    CREATURES_DB.flatwoodsMonster.unlocked = true;
+  }
+  if (state.ufoSector >= 3) {
+    CREATURES_DB.hopkinsvilleGoblin.unlocked = true;
+  }
+  if (state.ufoSector >= 4) {
+    CREATURES_DB.draconianReptilian.unlocked = true;
+  }
+
+  const startId = state.cells.length + 1;
+  for (let i = 0; i < 4; i++) {
+    state.cells.push({ id: startId + i, species: null, occupants: [] });
+  }
+
+  setStatus(`Sector 0${state.ufoSector} powered! +4 Containment Cells & +30 Alien DNA recovered!`);
+  saveGame();
+  renderAll();
+}
+
+// ==========================================
+// MUTATION ROLLER & LEUCISTIC PHOENIX EGG
+// ==========================================
+function rollMorph(chamberType = "standard") {
+  const r = Math.random() * 100;
+  const leucisticThreshold = chamberType === "phoenix" ? 13.0 : 5.5;
+
+  if (r < 1.5) return { type: "Astral", mult: 1.25 };
+  if (r < 3.5) return { type: "Melanistic", mult: 1.15 };
+  if (r < leucisticThreshold) return { type: "Leucistic", mult: 1.15 };
+  return { type: "Standard", mult: 1.0 };
+}
+
+function triggerPhoenixEasterEgg() {
+  if (!state.hasPhoenixChamber) {
+    state.hasPhoenixChamber = true;
+    document.getElementById("phoenix-modal").classList.remove("hidden");
+    playTone(980, "triangle", 0.4);
+  }
+}
+
+function closePhoenixModal() {
+  document.getElementById("phoenix-modal").classList.add("hidden");
+  renderAll();
+}
+
+// ==========================================
+// 7-DAY PHOENIX ASH REBIRTH CHECK
+// ==========================================
+function reignitePhoenix(cellId, uid) {
+  const cell = state.cells.find(c => c.id === cellId);
+  if (!cell) return;
+  const occ = cell.occupants.find(o => o.uid === uid);
+  if (!occ || !occ.isAshPile) return;
+
+  if (Date.now() < occ.reigniteAt) {
+    const hrsLeft = Math.ceil((occ.reigniteAt - Date.now()) / (1000 * 60 * 60));
+    return setStatus(`Ashes still smoldering. Ready to reignite in ~${hrsLeft} hours.`);
+  }
+
+  const chamber = document.getElementById("chamber-select").value;
+  const morph = rollMorph(chamber);
+  const base = CREATURES_DB.bennu;
+
+  occ.isAshPile = false;
+  occ.reigniteAt = null;
+  occ.morph = morph.type;
+  occ.name = morph.type !== "Standard" ? `${morph.type} Bennu Phoenix` : "Bennu Phoenix";
+  occ.maxHp = Math.round(base.stats.hp * morph.mult);
+  occ.hp = occ.maxHp;
+  occ.atk = Math.round(base.stats.atk * morph.mult);
+  occ.def = Math.round(base.stats.def * morph.mult);
+  occ.heal = Math.round(base.stats.heal * morph.mult);
+
+  if (morph.type === "Leucistic") {
+    triggerPhoenixEasterEgg();
+  }
+
+  playTone(840, "triangle", 0.3);
+  setStatus(`🔥 REBORN! Your ashes reignited into a ${occ.name}!`);
+  saveGame();
+  renderAll();
+}
+// ==========================================
+// INCUBATION & PARENT-TO-BRANCH EVOLUTION
+// ==========================================
+function incubateSpecies(key) {
+  const spec = CREATURES_DB[key];
+  if (!spec) return;
+
+  // Check if it's a locked Lovecraft DLC creature
+  if (spec.lovecraftDLC && !state.hasLovecraftDLC) {
+    return setStatus("Locked: Requires the H.P. Lovecraft Mythos Supporter Add-On.");
+  }
+
+  // Handle Branch Evolution (Requires Parent Specimen + Shard)
+  if (spec.evolvesFrom && spec.reqFragment) {
+    if (!state.shards.includes(spec.reqFragment)) {
+      return setStatus(`Missing required [${spec.reqFragment} Shard] to evolve into ${spec.name}.`);
+    }
+
+    // Find a living parent specimen in any containment cell
+    let parentCell = null;
+    let parentIdx = -1;
+    for (let c of state.cells) {
+      if (c.species === spec.evolvesFrom) {
+        const idx = c.occupants.findIndex(o => !o.isAshPile);
+        if (idx !== -1) {
+          parentCell = c;
+          parentIdx = idx;
+          break;
+        }
+      }
+    }
+
+    if (!parentCell) {
+      const parentName = CREATURES_DB[spec.evolvesFrom].name;
+      return setStatus(`You need a living [${parentName}] in a containment cell to evolve into ${spec.name}!`);
+    }
+
+    if (state.basicDNA < spec.cost || state.alienDNA < spec.alienCost) {
+      return setStatus(`Need ${spec.cost} Basic DNA${spec.alienCost ? ` + ${spec.alienCost} Alien DNA` : ""} to trigger evolution.`);
+    }
+
+    // Check if an open/compatible cell exists for the newly evolved species
+    const destCell = state.cells.find(
+      c => c.species === null || (c.species === key && c.occupants.length < spec.maxPerCell)
+    );
+    if (!destCell) {
+      return setStatus(`No open cell with space for ${spec.name} (Max ${spec.maxPerCell}/cell).`);
+    }
+
+    state.basicDNA -= spec.cost;
+    state.alienDNA -= spec.alienCost;
+    spec.unlocked = true;
+
+    // Remove the evolved parent specimen from its old cell
+    const oldUnit = parentCell.occupants.splice(parentIdx, 1)[0];
+    if (parentCell.occupants.length === 0) parentCell.species = null;
+
+    // Preserve rare morphs (like Leucistic/Melanistic) on evolution
+    const morphMult = oldUnit.morph === "Astral" ? 1.25 : (oldUnit.morph === "Standard" ? 1.0 : 1.15);
+    const maxHp = Math.round(spec.stats.hp * morphMult);
+
+    destCell.species = key;
+    destCell.occupants.push({
+      uid: Date.now() + Math.random(),
+      name: oldUnit.name === CREATURES_DB[spec.evolvesFrom].name ? spec.name : `${oldUnit.name} (${spec.name})`,
+      morph: oldUnit.morph,
+      lives: spec.lives || null,
+      hp: maxHp,
+      maxHp: maxHp,
+      atk: Math.round(spec.stats.atk * morphMult),
+      def: Math.round(spec.stats.def * morphMult),
+      heal: Math.round(spec.stats.heal * morphMult)
+    });
+
+    if (spec.addsTail && state.foxTails < 9) {
+      state.foxTails += 1;
+    }
+
+    playTone(880, "triangle", 0.3);
+    setStatus(`🧬 EVOLVED! ${oldUnit.name} transformed into ${spec.name} in Cell 0${destCell.id}!${spec.addsTail ? ` Kitsune Tails: ${state.foxTails}/9!` : ""}`);
+    saveGame();
+    return renderAll();
+  }
+
+  // Standard Direct-Line Incubation
+  if (!spec.unlocked) {
+    return setStatus(`Sequence incomplete (${spec.seqProgress}%). Deploy Research Teams to extract more DNA!`);
+  }
+
+  if (state.basicDNA < spec.cost || state.alienDNA < spec.alienCost) {
+    return setStatus("Insufficient DNA to synthesize specimen.");
+  }
+
+  const targetCell = state.cells.find(
+    c => c.species === null || (c.species === key && c.occupants.length < spec.maxPerCell)
+  );
+  if (!targetCell) {
+    return setStatus(`No open cell with space for ${spec.name} (Max ${spec.maxPerCell}/cell).`);
+  }
+
+  state.basicDNA -= spec.cost;
+  state.alienDNA -= spec.alienCost;
+
+  const chamber = document.getElementById("chamber-select").value;
+  const morph = rollMorph(chamber);
+  const customInput = document.getElementById("custom-name-input").value.trim();
+  const label = customInput || (morph.type !== "Standard" ? `${morph.type} ${spec.name}` : spec.name);
+  document.getElementById("custom-name-input").value = "";
+
+  const tailBonus = key === "kitsune" ? (1 + (state.foxTails - 1) * 0.25) : 1;
+  const maxHp = Math.round(spec.stats.hp * morph.mult * tailBonus);
+
+  targetCell.species = key;
+  targetCell.occupants.push({
+    uid: Date.now() + Math.random(),
+    name: label,
+    morph: morph.type,
+    lives: spec.lives || null,
+    isPhoenix: spec.isPhoenix || false,
+    hp: maxHp,
+    maxHp: maxHp,
+    atk: Math.round(spec.stats.atk * morph.mult * tailBonus),
+    def: Math.round(spec.stats.def * morph.mult * tailBonus),
+    heal: Math.round(spec.stats.heal * morph.mult * tailBonus)
+  });
+
+  if (key === "bennu" && morph.type === "Leucistic") {
+    triggerPhoenixEasterEgg();
+  }
+
+  playTone(760, "triangle", 0.25);
+  setStatus(`Incubated [${label}] (${morph.type}) into Cell 0${targetCell.id}!`);
+  saveGame();
+  renderAll();
+}
+
+// ==========================================
+// SHARD EXTRACTION & TIERED RESEARCH TEAMS
+// ==========================================
+function extractShard(shardName) {
+  if (!state.shards.includes(shardName)) {
+    state.shards.push(shardName);
+    playTone(860, "sine", 0.15);
+    setStatus(`Extracted [${shardName} Shard] for Genetic Tree evolution!`);
+    saveGame();
+    renderAll();
+  }
+}
+
+function sendResearchTeam(tier) {
+  const costs = { tier1: 35, tier2: 85, tier3: 160 };
+  const rarities = {
+    tier1: ["Common", "Rare"],
+    tier2: ["Rare", "Epic"],
+    tier3: ["Legendary"]
+  };
+
+  const cost = costs[tier];
+  if (state.basicDNA < cost) {
+    return setStatus(`Need ${cost} Basic DNA to launch this expedition.`);
+  }
+
+  state.basicDNA -= cost;
+  playTone(440, "sine", 0.2);
+
+  // Filter locked direct-line earthly creatures matching the expedition tier
+  const pool = Object.keys(CREATURES_DB).filter(k => {
+    const c = CREATURES_DB[k];
+    return !c.unlocked && !c.evolvesFrom && !c.alienOnly && !c.lovecraftDLC && rarities[tier].includes(c.rarity);
+  });
+
+  if (pool.length === 0) {
+    const refund = Math.round(cost * 1.4);
+    state.basicDNA += refund;
+    setStatus(`All ${tier.toUpperCase()} sequences already at 100%! Team recovered +${refund} surplus Basic DNA.`);
+    saveGame();
+    return renderAll();
+  }
+
+  const pickKey = pool[Math.floor(Math.random() * pool.length)];
+  const target = CREATURES_DB[pickKey];
+  target.seqProgress = Math.min(100, target.seqProgress + target.seqPerArtifact);
+
+  if (target.seqProgress >= 100) {
+    target.unlocked = true;
+    playTone(820, "triangle", 0.25);
+    setStatus(`ARTIFACT DECODED: [${target.name}] Sequence reached 100% and is now ready to incubate!`);
+  } else {
+    setStatus(`Artifact Extracted: +${target.seqPerArtifact}% [${target.name}] DNA Sequence (${target.seqProgress}/100%).`);
+  }
+
+  saveGame();
+  renderAll();
+}
+// ==========================================
+// COMBAT ARENA SETUP & CLASS MULTIPLIER
+// ==========================================
+function getClassMultiplier(attackerClass, defenderClass) {
+  const wheel = {
+    Monster: "Cryptid",
+    Cryptid: "Spectral",
+    Spectral: "Demon",
+    Demon: "Monster"
+  };
+  if (wheel[attackerClass] === defenderClass) return 1.35;
+  if (wheel[defenderClass] === attackerClass) return 0.75;
+  return 1.0;
+}
+
+function getSelectedFighter() {
+  const val = document.getElementById("fighter-select").value;
+  if (!val) return null;
+  const [cellId, uid] = val.split(":");
+  const cell = state.cells.find(c => c.id === Number(cellId));
+  const unit = cell ? cell.occupants.find(o => o.uid === Number(uid) && !o.isAshPile) : null;
+  return unit ? { cell, unit } : null;
+}
+
+function setupSparring() {
+  const fighter = getSelectedFighter();
+  if (!fighter) return setStatus("Select a living contained creature first!");
+
+  battle = {
+    active: true,
+    isWild: false,
+    playerCellId: fighter.cell.id,
+    playerUid: fighter.unit.uid,
+    playerClass: CREATURES_DB[fighter.cell.species].class,
+    playerUnit: { ...fighter.unit },
+    enemyUnit: {
+      name: "Holo-Wendigo",
+      speciesKey: "wendigo",
+      class: "Demon",
+      hp: 280,
+      maxHp: 280,
+      atk: 55,
+      def: 30,
+      heal: 20
+    },
+    defending: false
+  };
+
+  document.getElementById("battle-title").innerText = "Hard-Light Sparring (Safe Mode)";
+  toggleBattleButtons(true);
+  updateBattleUI("Sparring match started! Your specimen is safe from permadeath.");
+}
+
+function startWildBattle() {
+  if (getLivingCreatureCount() < 5) {
+    return setStatus("SAFETY PROTOCOL: You need at least 5 living creatures in your facility before launching a Wild Raid!");
+  }
+  if (state.basicDNA < 120) {
+    return setStatus("Need 120 Basic DNA to fund a Wild Containment Raid.");
+  }
+
+  const fighter = getSelectedFighter();
+  if (!fighter) {
+    switchTab("battle");
+    return setStatus("Select your lead fighter from the dropdown first, then launch your raid!");
+  }
+
+  state.basicDNA -= 120;
+
+  // Pick a random wild anomaly (including Lovecraft horrors if DLC is active)
+  const wildPool = Object.keys(CREATURES_DB).filter(k => {
+    const c = CREATURES_DB[k];
+    if (c.lovecraftDLC && !state.hasLovecraftDLC) return false;
+    return c.rarity === "Rare" || c.rarity === "Epic" || c.rarity === "Legendary";
+  });
+
+  const pick = wildPool[Math.floor(Math.random() * wildPool.length)];
+  const base = CREATURES_DB[pick];
+
+  battle = {
+    active: true,
+    isWild: true,
+    playerCellId: fighter.cell.id,
+    playerUid: fighter.unit.uid,
+    playerClass: CREATURES_DB[fighter.cell.species].class,
+    playerUnit: { ...fighter.unit },
+    enemyUnit: {
+      name: `Wild ${base.name}`,
+      speciesKey: pick,
+      class: base.class,
+      hp: base.stats.hp,
+      maxHp: base.stats.hp,
+      atk: base.stats.atk,
+      def: base.stats.def,
+      heal: base.stats.heal
+    },
+    defending: false
+  };
+
+  switchTab("battle");
+  document.getElementById("battle-title").innerText = "⚠️ WILD CONTAINMENT RAID (PERMADEATH ACTIVE)";
+  toggleBattleButtons(true);
+  updateBattleUI(`Encountered ${battle.enemyUnit.name} [${base.class}]! Reduce below 25% HP to Subdue.`);
+}
+
+// ==========================================
+// TURN-BASED COMBAT, 9-LIVES & ASH REBIRTH
+// ==========================================
+function battleTurn(action) {
+  if (!battle.active) return;
+  const p = battle.playerUnit;
+  const e = battle.enemyUnit;
+  let log = "";
+
+  // Subdue / Capture Action
+  if (action === "capture") {
+    if (!battle.isWild || e.hp > e.maxHp * 0.25) {
+      return updateBattleUI("Target must be a Wild Anomaly below 25% HP!");
+    }
+
+    const spec = CREATURES_DB[e.speciesKey];
+    const openCell = state.cells.find(
+      c => c.species === null || (c.species === e.speciesKey && c.occupants.length < spec.maxPerCell)
+    );
+    if (!openCell) {
+      return updateBattleUI(`No open cell with capacity for ${spec.name} (Max ${spec.maxPerCell}/cell)!`);
+    }
+
+    const chamber = document.getElementById("chamber-select").value;
+    const morph = rollMorph(chamber);
+    openCell.species = e.speciesKey;
+    openCell.occupants.push({
+      uid: Date.now() + Math.random(),
+      name: `${morph.type !== "Standard" ? morph.type + " " : ""}${spec.name}`,
+      morph: morph.type,
+      lives: spec.lives || null,
+      isPhoenix: spec.isPhoenix || false,
+      hp: e.maxHp,
+      maxHp: e.maxHp,
+      atk: e.atk,
+      def: e.def,
+      heal: e.heal
+    });
+
+    if (e.speciesKey === "bennu" && morph.type === "Leucistic") {
+      triggerPhoenixEasterEgg();
+    }
+
+    battle.active = false;
+    toggleBattleButtons(false);
+    playTone(900, "triangle", 0.3);
+    saveGame();
+    renderAll();
+    return updateBattleUI(`SUCCESS! Subdued and captured ${e.name} into Cell 0${openCell.id}!`);
+  }
+
+  // Player Turn Action
+  if (action === "attack") {
+    playTone(180, "sawtooth", 0.12);
+    const mult = getClassMultiplier(battle.playerClass, e.class);
+    const dmg = Math.max(10, Math.round((p.atk * mult) - Math.floor(e.def * 0.4)));
+    e.hp = Math.max(0, e.hp - dmg);
+    log += `${p.name} deals ${dmg} DMG${mult > 1 ? " (Class Advantage!)" : ""}! `;
+  } else if (action === "defend") {
+    playTone(320, "sine", 0.1);
+    battle.defending = true;
+    log += `${p.name} raises guard! `;
+  } else if (action === "heal") {
+    playTone(620, "sine", 0.15);
+    p.hp = Math.min(p.maxHp, p.hp + p.heal);
+    log += `${p.name} heals ${p.heal} HP! `;
+  }
+
+  // Check Enemy Defeat
+  if (e.hp <= 0) {
+    battle.active = false;
+    toggleBattleButtons(false);
+    const reward = battle.isWild ? 200 : 25;
+    state.basicDNA += reward;
+    saveGame();
+    renderAll();
+    return updateBattleUI(`${e.name} defeated! Earned +${reward} Basic DNA.`);
+  }
+
+  // Enemy Counterattack
+  const enemyMult = getClassMultiplier(e.class, battle.playerClass);
+  const enemyDmg = Math.max(8, Math.round((e.atk * enemyMult) - Math.floor(p.def * (battle.defending ? 1.0 : 0.4))));
+  battle.defending = false;
+  p.hp = Math.max(0, p.hp - enemyDmg);
+  log += `${e.name} strikes back for ${enemyDmg} DMG!`;
+
+  // Check Player Knock-Out / Survival / Permadeath
+  if (p.hp <= 0) {
+    if (!battle.isWild) {
+      battle.active = false;
+      toggleBattleButtons(false);
+      log += ` ${p.name} knocked out (Safe Sparring).`;
+    } else {
+      const cell = state.cells.find(c => c.id === battle.playerCellId);
+      const realUnit = cell ? cell.occupants.find(o => o.uid === battle.playerUid) : null;
+
+      // 1. Check Bakeneko / Nekomata 9-Lives System
+      if (realUnit && realUnit.lives && realUnit.lives > 1) {
+        realUnit.lives -= 1;
+        p.lives = realUnit.lives;
+        p.hp = Math.round(p.maxHp * 0.5);
+        playTone(720, "sine", 0.25);
+        log += ` 🐱 9-LIVES MIRACLE! ${p.name} burned a life (${realUnit.lives} lives left) and rose with 50% HP!`;
+      }
+      // 2. Check Bennu Phoenix 7-Day Ash Rebirth
+      else if (realUnit && (realUnit.isPhoenix || cell.species === "bennu")) {
+        battle.active = false;
+        toggleBattleButtons(false);
+        realUnit.isAshPile = true;
+        realUnit.reigniteAt = Date.now() + (7 * 24 * 60 * 60 * 1000);
+        realUnit.name = `Smoldering Ashes (${realUnit.name})`;
+        playTone(260, "triangle", 0.4);
+        log += ` 🔥 ${p.name} collapsed into Smoldering Ashes! It will reignite in 7 days.`;
+      }
+      // 3. Permanent Loss to Memorial
+      else {
+        battle.active = false;
+        toggleBattleButtons(false);
+        if (cell) {
+          const idx = cell.occupants.findIndex(o => o.uid === battle.playerUid);
+          if (idx !== -1) {
+            const dead = cell.occupants.splice(idx, 1)[0];
+            if (cell.occupants.length === 0) cell.species = null;
+            state.memorial.push(`${dead.name} (${dead.morph}) - Lost fighting ${e.name}`);
+            log += ` 💀 ${dead.name} WAS KILLED IN ACTION AND LOST FOREVER!`;
+          }
+        }
+      }
+    }
+  }
+
+  saveGame();
+  updateBattleUI(log);
+  renderAll();
+}
+
+function toggleBattleButtons(enabled) {
+  ["btn-atk", "btn-def", "btn-heal", "btn-capture"].forEach(id => {
+    document.getElementById(id).disabled = !enabled;
+  });
+}
+
+function updateBattleUI(msg) {
+  document.getElementById("battle-log").innerText = msg;
+  if (battle.playerUnit && battle.enemyUnit) {
+    const livesTag = battle.playerUnit.lives ? ` | Lives: ${battle.playerUnit.lives}/9` : "";
+    document.getElementById("player-fighter").innerHTML = `<strong>${battle.playerUnit.name}</strong><br>HP: ${battle.playerUnit.hp}/${battle.playerUnit.maxHp}${livesTag}`;
+    document.getElementById("enemy-fighter").innerHTML = `<strong>${battle.enemyUnit.name}</strong> [${battle.enemyUnit.class}]<br>HP: ${battle.enemyUnit.hp}/${battle.enemyUnit.maxHp}`;
+  }
+}
+// ==========================================
+// INSTANT GUMROAD SUPPORTER ADD-ON VERIFICATION
+// ==========================================
+async function verifyPinataLicense() {
+  const key = document.getElementById("gumroad-key-input").value.trim();
+  if (!key) return setStatus("Please enter a valid Gumroad license key.");
+
+  // Check Cannibalistic Piñata Add-On first, then Lovecraft Mythos Add-On
+  const products = [
+    { id: PINATA_PRODUCT_ID, type: "pinata" },
+    { id: LOVECRAFT_PRODUCT_ID, type: "lovecraft" }
+  ];
+
+  for (let prod of products) {
+    try {
+      const res = await fetch("https://gumroad.com", {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: new URLSearchParams({ product_id: prod.id, license_key: key })
+      });
+      const data = await res.json();
+
+      if (data.success && !data.purchase.refunded && data.uses <= 3) {
+        if (prod.type === "pinata") {
+          state.hasPinataDLC = true;
+          playTone(880, "triangle", 0.3);
+          setStatus("🍭 Cannibalistic Piñata Activated! Generating Cursed Candy.");
+        } else if (prod.type === "lovecraft") {
+          state.hasLovecraftDLC = true;
+          Object.keys(CREATURES_DB).forEach(k => {
+            if (CREATURES_DB[k].lovecraftDLC && !CREATURES_DB[k].evolvesFrom) {
+              CREATURES_DB[k].unlocked = true;
+            }
+          });
+          playTone(420, "sawtooth", 0.4);
+          setStatus("🐙 H.P. Lovecraft Mythos Tree Unlocked! Check the Genetic Trees tab.");
+        }
+        document.getElementById("gumroad-key-input").value = "";
+        saveGame();
+        return renderAll();
+      }
+    } catch (err) {
+      // Continue checking next product ID if network fails on one
+    }
+  }
+
+  setStatus("Invalid, refunded, or max-activated license key.");
+}
+
+// ==========================================
+// APPLY COSMETIC CANDY THEME
+// ==========================================
+function applyCandyTheme() {
+  if (state.cursedCandy < 100) {
+    return setStatus("Need 100 Cursed Candy to apply a Candy Theme.");
+  }
+
+  const val = document.getElementById("candy-target-select").value;
+  if (!val) return setStatus("Select a contained specimen first.");
+
+  const [cellId, uid] = val.split(":");
+  const cell = state.cells.find(c => c.id === Number(cellId));
+  const unit = cell ? cell.occupants.find(o => o.uid === Number(uid) && !o.isAshPile) : null;
+
+  if (unit) {
+    state.cursedCandy -= 100;
+    unit.morph = "Candy";
+    if (!unit.name.startsWith("Sugar-Spun")) {
+      unit.name = `Sugar-Spun ${unit.name}`;
+    }
+    playTone(920, "sine", 0.25);
+    setStatus(`🍭 Applied Candy Theme to ${unit.name}!`);
+    saveGame();
+    renderAll();
+  }
+}
+
+// ==========================================
+// EXPORT & IMPORT SAVE BACKUP STRINGS
+// ==========================================
+function exportSave() {
+  saveGame();
+  const raw = localStorage.getItem("acf_alchemy_save_v1") || "";
+  const code = btoa(unescape(encodeURIComponent(raw)));
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(code);
+    setStatus("Save backup string copied to clipboard! Paste it somewhere safe.");
+  } else {
+    prompt("Copy your ACF Save Backup String:", code);
+  }
+}
+
+function importSave() {
+  const code = prompt("Paste your ACF Save Backup string:");
+  if (!code) return;
+  try {
+    const decoded = decodeURIComponent(escape(atob(code.trim())));
+    JSON.parse(decoded); // Validate JSON before overwriting
+    localStorage.setItem("acf_alchemy_save_v1", decoded);
+    location.reload();
+  } catch (e) {
+    setStatus("Invalid save backup string.");
+  }
+}
+// ==========================================
+// UI RENDERING ENGINE (HUD, SECTORS & TREES)
+// ==========================================
+function renderHUD() {
+  const living = getLivingCreatureCount();
+  document.getElementById("basic-dna").innerText = state.basicDNA;
+  document.getElementById("alien-dna").innerText = state.alienDNA;
+  document.getElementById("fox-tails").innerText = state.foxTails;
+  document.getElementById("living-count").innerText = living;
+  document.getElementById("memorial-count").innerText = state.memorial.length;
+  document.getElementById("sector-label").innerText = `Sector 0${state.activeSector} of 0${state.ufoSector} (${state.cells.length} Total Cells) • By Alchemy Production`;
+  document.getElementById("repair-btn").innerText = `🔧 Repair Next UFO Sector (+4 Cells & Alien DNA) - Cost: ${state.ufoSector * 250} DNA`;
+  document.getElementById("raid-btn").disabled = living < 5;
+
+  if (state.hasPhoenixChamber) {
+    const opt = document.getElementById("opt-phoenix-chamber");
+    opt.disabled = false;
+    opt.innerText = "Chamber 02: Pale-Ember Incubator (4x Leucistic Odds)";
+  }
+
+  if (state.hasPinataDLC) {
+    document.getElementById("candy-hud").classList.remove("hidden");
+    document.getElementById("cursed-candy").innerText = state.cursedCandy;
+    document.getElementById("pinata-locked-ui").classList.add("hidden");
+    document.getElementById("pinata-unlocked-ui").classList.remove("hidden");
+  }
+}
+
+function renderAll() {
+  renderHUD();
+  document.getElementById("fragments-display").innerText = `Shards: ${state.shards.length ? state.shards.join(", ") : "None"}`;
+
+  // Populate Tree Filter Dropdown once
+  const filterSel = document.getElementById("tree-filter");
+  if (filterSel.options.length === 0) {
+    const trees = ["All Trees", ...new Set(Object.values(CREATURES_DB).map(c => c.tree))];
+    trees.forEach(t => filterSel.add(new Option(t, t)));
+  }
+
+  // Render 4-Cell Sector Navigation Tabs
+  const secNav = document.getElementById("sector-tabs");
+  secNav.innerHTML = "";
+  for (let s = 1; s <= state.ufoSector; s++) {
+    const btn = document.createElement("button");
+    btn.innerText = `Wing 0${s}`;
+    if (s === state.activeSector) btn.classList.add("active-sector");
+    btn.onclick = () => selectSector(s);
+    secNav.appendChild(btn);
+  }
+
+  // Render Active Sector's 4 Containment Cells & Populate Dropdowns
+  const cGrid = document.getElementById("cells-grid");
+  const fSel = document.getElementById("fighter-select");
+  const candySel = document.getElementById("candy-target-select");
+  cGrid.innerHTML = "";
+  fSel.innerHTML = "";
+  candySel.innerHTML = "";
+
+  // Populate dropdowns from ALL sectors
+  state.cells.forEach(c => {
+    c.occupants.forEach(o => {
+      if (!o.isAshPile) {
+        fSel.add(new Option(`${o.name} (Cell 0${c.id} | HP ${o.hp})`, `${c.id}:${o.uid}`));
+        candySel.add(new Option(`${o.name} (Cell 0${c.id})`, `${c.id}:${o.uid}`));
+      }
+    });
+  });
+
+  // Render only the 4 cells belonging to the currently selected UFO Sector
+  const startIdx = (state.activeSector - 1) * 4;
+  const sectorCells = state.cells.slice(startIdx, startIdx + 4);
+
+  sectorCells.forEach(c => {
+    const div = document.createElement("div");
+    div.className = `cell ${c.species ? "occupied" : ""}`;
+    if (!c.species || c.occupants.length === 0) {
+      div.innerHTML = `<strong>CELL 0${c.id}: [EMPTY]</strong><p>Adaptive Hard-Light Containment Standby</p>`;
+    } else {
+      const spec = CREATURES_DB[c.species];
+      const occHtml = c.occupants.map(o => {
+        if (o.isAshPile) {
+          const msLeft = Math.max(0, o.reigniteAt - Date.now());
+          const hrsLeft = Math.ceil(msLeft / (1000 * 60 * 60));
+          const ready = msLeft === 0;
+          return `
+            <div style="margin: 6px 0; padding: 6px; border: 1px dashed #f0883e;">
+              🔥 <strong>${o.name}</strong><br>
+              <small>${ready ? "Ready to reignite!" : `Reignites in ~${hrsLeft}h`}</small><br>
+              <button onclick="reignitePhoenix(${c.id}, ${o.uid})" ${ready ? "" : "disabled"}>Reignite Phoenix</button>
+            </div>
+          `;
+        }
+        const livesText = o.lives ? ` | ❤️ ${o.lives}/9 Lives` : "";
+        return `
+          <div style="margin: 6px 0;">
+            ${getClassSvg(spec.class, o.morph)}
+            <span class="morph-${o.morph}">${o.name}</span> [${o.morph}${livesText}]
+          </div>
+        `;
+      }).join("");
+
+      const hasLiving = c.occupants.some(o => !o.isAshPile);
+      const extractBtn = hasLiving && spec.yields && !state.shards.includes(spec.yields)
+        ? `<button onclick="extractShard('${spec.yields}')">🧬 Extract ${spec.yields} Shard</button>` : "";
+
+      div.innerHTML = `
+        <strong>CELL 0${c.id}: ${spec.name} (${c.occupants.length}/${spec.maxPerCell})</strong>
+        ${occHtml}
+        ${extractBtn}
+      `;
+    }
+    cGrid.appendChild(div);
+  });
+
+  // Render Genetic Trees & Incubator Cards
+  const tGrid = document.getElementById("tree-grid");
+  tGrid.innerHTML = "";
+  const activeFilter = filterSel.value;
+
+  Object.keys(CREATURES_DB).forEach(key => {
+    const s = CREATURES_DB[key];
+    if (activeFilter !== "All Trees" && s.tree !== activeFilter) return;
+
+    const div = document.createElement("div");
+    div.className = `card ${s.alienOnly || s.lovecraftDLC ? "alien" : ""}`;
+
+    let btnLabel = "";
+    if (s.lovecraftDLC && !state.hasLovecraftDLC) {
+      btnLabel = "🔒 Lovecraft Add-On Required";
+    } else if (s.evolvesFrom) {
+      btnLabel = `🧬 Evolve (${s.cost} DNA${s.alienCost ? ` + ${s.alienCost} Alien` : ""})`;
+    } else if (s.unlocked) {
+      btnLabel = `Incubate (${s.cost} DNA${s.alienCost ? ` + ${s.alienCost} Alien` : ""})`;
+    } else {
+      btnLabel = `Sequencing (${s.seqProgress}%)`;
+    }
+
+    const seqBar = !s.evolvesFrom && !s.alienOnly && !s.lovecraftDLC
+      ? `<div class="seq-bar-wrap"><div class="seq-bar-fill" style="width:${s.seqProgress}%"></div></div>` : "";
+
+    div.innerHTML = `
+      ${getClassSvg(s.class, "Standard")}
+      <strong>${s.name}</strong><br>
+      <small>${s.tree} | ${s.class} | ${s.rarity} | Max ${s.maxPerCell}/Cell</small>
+      ${seqBar}
+      <p>HP ${s.stats.hp} | ATK ${s.stats.atk} | DEF ${s.stats.def} | HEAL ${s.stats.heal}</p>
+      <small>${s.reqText}</small><br>
+      <button onclick="incubateSpecies('${key}')">${btnLabel}</button>
+    `;
+    tGrid.appendChild(div);
+  });
+
+  // Render Fallen Memorial
+  document.getElementById("memorial-list").innerHTML =
+    state.memorial.map(m => `<li>${m}</li>`).join("") || "<li>No casualties recorded.</li>";
+}
+
+// Start Game Render
+renderAll();
